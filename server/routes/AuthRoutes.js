@@ -8,7 +8,7 @@ const authRouter = express.Router();
 authRouter.post("/login", userLogin)
 authRouter.post("/verify-otp", getAuthUserDetail, verifyOTPCode)
 authRouter.post("/logout", userLogout)
-authRouter.post("/is-auth", getAuthUserDetail, isAuthenticated)
+authRouter.get("/is-auth", getAuthUserDetail, isAuthenticated)
 authRouter.post("/reset-password", getAuthUserDetail, resetPassword)
 
 export { authRouter };

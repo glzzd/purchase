@@ -3,13 +3,16 @@ import jwt from "jsonwebtoken";
 export const getAuthUserDetail = async (req, res, next) => {
   const { tempToken, token } = req.cookies;
 
+  
+
   if (!tempToken && !token) {
     return res.status(401).json({
       success: false,
       message: "Təkrar daxil olun.",
     });
   }
-
+  console.log(tempToken);
+  
   try {
     let email;
     let id;
