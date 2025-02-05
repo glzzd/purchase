@@ -3,31 +3,36 @@ import { Link, useNavigate } from "react-router";
 import { AppContext } from '../../context/AppContext';
 import { toast } from 'react-toastify';
 import axios from 'axios'
-import Navbar from '../../components/Navbar';
+import ReactLoading from 'react-loading';
 
 const LoginPage = () => {
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
   const {backendUrl, setisLoggedIn, getUserData} = useContext(AppContext)
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+    
     try {
       axios.defaults.withCredentials=true
-
+      setLoading(true)
       const {data} = await axios.post(backendUrl + '/api/auth/login', {email,password});
       
       if(data.success){
         toast.success(data.message)
+        setLoading(false)
         setisLoggedIn(true)
         getUserData()
-        navigate('/')
+        navigate('/verify-otp')
       }else{
+        setLoading(false);
         toast.error(data.message)
       }
 
     } catch (error) {
+      setLoading(false);
       toast.error(error.response?.data?.message );
     }
   }
@@ -78,9 +83,13 @@ const LoginPage = () => {
         <div>
           <button
             type="submit"
-            className="w-full py-3 bg-amber-300 text-[#242424] font-semibold rounded-lg border-2 border-transparent hover:bg-transparent hover:text-amber-300 hover:border-amber-300 transition-colors cursor-pointer"
+            className="w-full flex py-3 bg-amber-300 text-[#242424] font-semibold rounded-lg border-2 border-transparent hover:bg-transparent hover:text-amber-300 hover:border-amber-300 transition-colors cursor-pointer justify-center items-center h-[50px]"
           >
-            Daxil Ol
+            {loading && (<ReactLoading type="spin" color="#242424" height={30}  width={30} />) }
+            {!loading && (<span>Daxil ol</span>) }
+          
+      
+
           </button>
         </div>
         <div className="text-center mt-0">

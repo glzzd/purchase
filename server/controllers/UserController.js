@@ -60,7 +60,7 @@ export const getSignedData = async (req, res) => {
         position: user.position,
         structure: user.structure,
         systemRole: user.systemRole,
-
+        isFirstLogin: user.isFirstLogin
       }
     })
     

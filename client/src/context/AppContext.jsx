@@ -13,7 +13,7 @@ export const AppContextProvider = (props) => {
       
             axios.defaults.withCredentials=true
             const {data} = await axios.get(backendUrl + '/api/auth/is-auth')
-            console.log(data);
+      
             if(data.success){
                 setisLoggedIn(true)
                 getUserData()
@@ -24,6 +24,8 @@ export const AppContextProvider = (props) => {
     const getUserData = async () => {
         try {
             const {data} = await axios.get(backendUrl + '/api/user/user-detail')
+
+            
             data.success ? setUserData(data.userData) : toast.error(data.message)
         } catch (error) {
             toast.error(error.message)

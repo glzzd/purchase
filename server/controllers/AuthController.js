@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 
 export const userLogin = async (req, res) => {
   const { email, password } = req.body;
-console.log(email, password);
+
 
   if (!email || !password) {
     return res.status(400).json({
@@ -83,6 +83,17 @@ export const verifyOTPCode = async (req, res) => {
       .json({ success: false, message: "E-mail və OTP kodu tələb olunur." });
   }
 
+  // OTP-ni number-ə çevirmək
+  const otpNumber = Number(otp);
+
+  // OTP-nin düzgün olub-olmadığını yoxla
+  if (isNaN(otpNumber)) {
+    return res.status(400).json({
+      success: false,
+      message: "OTP kodu etibarlı bir ədəd olmalıdır.",
+    });
+  }
+
   try {
     const user = await UserModel.findOne({ email });
     if (!user) {
@@ -95,7 +106,7 @@ export const verifyOTPCode = async (req, res) => {
       });
     }
 
-    if (user.verifyOtp !== otp) {
+    if (user.verifyOtp !== otpNumber) { // Burada `otpNumber` ilə müqayisə olunur
       return res.status(401).json({
         success: false,
         message: "OTP kodu yanlışdır.",
@@ -136,6 +147,7 @@ export const verifyOTPCode = async (req, res) => {
     });
   }
 };
+
 
 export const userLogout = async (req, res) => {
   const { email } = req.body;
@@ -230,6 +242,7 @@ export const resetPassword = async (req,res) => {
 
     const hashedPassword = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, hashedPassword);
+    user.isFirstLogin = false
     await user.save();
     return res.status(200).json({
       success: true,

@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser"
 import  connectDB  from "./config/mongodb.js";
 import  {authRouter}  from "./routes/AuthRoutes.js";
 import  {userRouter}  from "./routes/UserRoutes.js";
+import { categoryRouter } from "./routes/CategoryRoutes.js";
 
 const app = express();
 const port = process.env.SERVER_PORT || 4000
@@ -24,6 +25,7 @@ app.get('/',(req,res) => {
 })
 app.use("/api/auth", authRouter)
 app.use("/api/user", userRouter)
+app.use("/api/category", categoryRouter)
 
 app.listen(port, () => console.log(
     "Server "+port+" nömrəli portda işləyir"

@@ -11,7 +11,6 @@ export const getAuthUserDetail = async (req, res, next) => {
       message: "Təkrar daxil olun.",
     });
   }
-  console.log(tempToken);
   
   try {
     let email;
