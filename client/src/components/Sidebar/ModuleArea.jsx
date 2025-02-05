@@ -33,7 +33,7 @@ const ModuleArea = () => {
   }
 
   return (
-    <div className="bg-amber-300 px-4 py-2 text-center rounded-md text-[#242424] font-bold flex gap-4 items-center">
+    <div className="bg-amber-400 px-4 py-2 text-center rounded-md text-[#242424] font-bold flex gap-4 items-center">
       {IconComponent && <IconComponent />}
       <div className="border-r border-gray-700 my-1 h-6"></div>
       <span>{(userRole.elements.name) ? userRole.elements.name : userData.position}</span>

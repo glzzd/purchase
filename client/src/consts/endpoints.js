@@ -6,7 +6,7 @@ export const endpoints = {
     subCategories:"/api/category/sub-categories/",
     products:"/api/category/product/",
     productTypes:"/api/category/product/product-types/",
-    specifications:"/api/category-type-specifications/",
+    specifications:"/api/category/product/product-types/specifications/",
     makeOrder:"/api/make-order",
     validateToken:"/api/validate-token"
 }

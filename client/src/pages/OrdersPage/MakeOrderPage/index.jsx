@@ -1,14 +1,18 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { AppContext } from "../../../context/AppContext";
 import {
   fetchMainCategories,
   fetchProducts,
   fetchProductTypes,
+  fetchSpecifications,
   fetchSubCategories,
 } from "../../../api/categoryApi";
+import { Button, ConfigProvider, Flex, Segmented, Tooltip } from "antd";
+import { Info } from "lucide-react";
 
 const MakeOrder = () => {
   const { userData } = useContext(AppContext);
+  const [arrow, setArrow] = useState("Show");
 
   const [mainCategories, setMainCategories] = useState([]);
   const [selectedMainCategory, setSelectedMainCategory] = useState("");
@@ -22,6 +26,9 @@ const MakeOrder = () => {
   const [productTypes, setProductTypes] = useState([]);
   const [selectedProductType, setSelectedProductType] = useState("");
 
+  const [specifications, setSpecifications] = useState([]);
+  const [specValues, setSpecValues] = useState({});
+
   const [error, setError] = useState("");
 
   const userFullName = `${userData.surname} ${userData.name}`;
@@ -29,6 +36,17 @@ const MakeOrder = () => {
   const position = `${userData.position}i`;
   const structure = `${userData.structure.head_office}-ci Baş idarənin ${userData.structure.office}-ci İdarəsinin ${userData.structure.department}-cü Şöbəsinin`;
 
+  const mergedArrow = useMemo(() => {
+    if (arrow === "Hide") {
+      return false;
+    }
+    if (arrow === "Show") {
+      return true;
+    }
+    return {
+      pointAtCenter: true,
+    };
+  }, [arrow]);
   const handleMainCategoryChange = (e) => {
     setSelectedMainCategory(e.target.value);
     setError("");
@@ -49,11 +67,16 @@ const MakeOrder = () => {
     setError("");
   };
 
+  const handleSpecChange = (name, value) => {
+    setSpecValues((prevValues) => ({
+      ...prevValues,
+      [name]: value,
+    }));
+  };
   const handleSubmit = () => {
     if (!selectedMainCategory) {
       setError("Zəhmət olmasa Ana Kateqoriyanı seçin.");
     } else {
-      console.log("Seçilen kategori:", selectedMainCategory);
     }
   };
 
@@ -74,7 +97,6 @@ const MakeOrder = () => {
     const getSubCategories = async () => {
       const categories = await fetchSubCategories(selectedMainCategory);
       setSubCategories(categories);
-      console.log("Seçilen kategori:", selectedMainCategory);
     };
     getSubCategories();
   }, [selectedMainCategory]);
@@ -88,7 +110,6 @@ const MakeOrder = () => {
     const getProducts = async () => {
       const products = await fetchProducts(selectedSubCategory);
       setProducts(products);
-      console.log("Seçilen kategori:", selectedMainCategory);
     };
     getProducts();
   }, [selectedSubCategory]);
@@ -104,27 +125,56 @@ const MakeOrder = () => {
       console.log("productTypes: ", productTypes);
 
       setProductTypes(productTypes);
-      console.log("Seçilen kategori:", selectedMainCategory);
     };
     getProductTypes();
   }, [selectedProduct]);
 
+  useEffect(() => {
+    if (!selectedProductType) {
+      setSpecifications([]);
+      return;
+    }
+
+    const getSpecifications = async () => {
+      const specifications = await fetchSpecifications(selectedProductType);
+      console.log("specifications", specifications);
+
+      setSpecifications(specifications);
+    };
+    getSpecifications();
+  }, [selectedProductType]);
+  const text = (
+    <div className="space-y-2 text-white text-[12px]">
+      <p>
+        1. Məhsulları seçərək səbətinizə əlavə edin
+      </p>
+      <p>
+        2. Səbətinizi təstiqedin
+      </p>
+      <p>
+        3. Sistem avtomatik olaraq satınalma raportu generasiya edəcək
+      </p>
+      <p>
+        4. Sənədi yükləyin və sənəd dövriyyəsinə daxil edin
+      </p>
+    </div>
+  );
   return (
     <div className="bg-white rounded-md p-4 flex flex-col">
-      <div className="flex flex-col">
-        <span className="text-2xl font-bold">Satınalma sifarişi</span>
-        <span className="text-[12px] text-red-400">
-          1. Satınalınmasını tələb etdiyiniz məhsulları seçərək səbətinizə əlavə
-          edin
+      <div className="flex items-center gap-5">
+        <span className="text-2xl font-bold">
+          Satınalma sifarişi{" "}
         </span>
-        <span className="text-[12px] text-red-400">
-          2. Məhsullarının satınalınma tələbini yaratmaq üçün, Səbətinizi təstiq
-          edin{" "}
-        </span>
-        <span className="text-[12px] text-red-400">
-          3. Sistem avtomatik olaraq satınalma raportu generasiya edəcək, onu
-          yükləyin və sənəd dövriyyəsinə daxil edin
-        </span>
+          <Tooltip
+            placement="right"
+            title={text}
+            arrow={mergedArrow}
+            overlayInnerStyle={{
+              width: "400px",
+            }}
+          >
+            <Info className="text-blue-500"/>
+          </Tooltip>
       </div>
 
       <div className="py-5 text-gray-200">
@@ -225,17 +275,103 @@ const MakeOrder = () => {
         </div>
       )}
 
-      {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+      {specifications.length > 0 && (
+        <div className="mb-4 mt-4 p-4 bg-gray-100 border rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">
+            Xüsusiyyətləri daxil edin
+          </h2>
+          <hr />
+          <br />
+          <div className="flex flex-wrap justify-between gap-1">
+            {specifications.map((spec) => (
+              <div key={spec.id} className="mb-4">
+                <label htmlFor={`spec-${spec.id}`} className="block text-lg">
+                  {spec.specificationName}
+                </label>
+                <input
+                  type="text"
+                  id={`spec-${spec.id}`}
+                  placeholder={`Məsələn, ${spec.specificationExample}`}
+                  value={specValues[spec.specificationName] || ""} // Değeri state'ten al
+                  onChange={(e) =>
+                    handleSpecChange(spec.specificationName, e.target.value)
+                  } // Değişikliği yakala
+                  className="w-[200px] p-2 mt-2 border rounded-lg shadow-sm"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {selectedMainCategory &&
+        selectedSubCategory &&
+        selectedProduct &&
+        selectedProductType && (
+          <form action="">
+            <div className="flex items-center justify-between">
+              <div className="w-[500px] space-y-4">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="orderFor" className="text-lg font-medium">
+                    Kimin üçün:
+                  </label>
+                  <input
+                    type="text"
+                    id="orderFor"
+                    placeholder="Məsələn, İlkin Quluzadə"
+                    className="w-[300px] p-2 border rounded-lg shadow-sm"
+                    required
+                  />
+                </div>
 
-      {/* Submit Button */}
-      <div className="mt-5">
-        <button
-          onClick={handleSubmit}
-          className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
-        >
-          Siparişi Onayla
-        </button>
-      </div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="orderCount" className="text-lg font-medium">
+                    Sayı:
+                  </label>
+                  <input
+                    type="number"
+                    id="orderCount"
+                    required
+                    placeholder="Məsələn, 1"
+                    className="w-[300px] p-2 border rounded-lg shadow-sm"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="orderBy" className="text-lg font-medium">
+                    Sifarişçi:
+                  </label>
+                  <input
+                    type="text"
+                    id="orderBy"
+                    required
+                    value={userFullName}
+                    className="w-[300px] p-2 border rounded-lg shadow-sm"
+                    readOnly
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-1 px-4">
+                <textarea
+                  cols={100}
+                  placeholder="Qeydlərinizi yazın..."
+                  className="w-full p-2 border rounded-lg shadow-sm h-[100px] min-h-[100px]"
+                />
+              </div>
+
+              <div className="flex items-center justify-center">
+                <button
+                  className=" bg-[#242424] cursor-pointer rounded-md border-2 border-[#242424] hover:border-amber-400 hover:bg-transparent h-[100px] w-[200px] font-bold text-amber-400 rounded-"
+                  type="submit"
+                  onClick={handleSubmit}
+                >
+                  Sifarişə əlavə et
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+      {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
     </div>
   );
 };

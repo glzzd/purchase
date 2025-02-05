@@ -76,7 +76,7 @@ const OTPPage = () => {
              <div>
                       <button
                         type="submit"
-                        className="w-full flex py-3 bg-amber-300 text-[#242424] font-semibold rounded-lg border-2 border-transparent hover:bg-transparent hover:text-amber-300 hover:border-amber-300 transition-colors cursor-pointer justify-center items-center h-[50px]"
+                        className="w-full flex py-3 bg-amber-400 text-[#242424] font-semibold rounded-lg border-2 border-transparent hover:bg-transparent hover:text-amber-400 hover:border-amber-400 transition-colors cursor-pointer justify-center items-center h-[50px]"
                       >
                         {loading && (<ReactLoading type="spin" color="#242424" height={30}  width={30} />) }
                         {!loading && (<span>Təstiq et</span>) }

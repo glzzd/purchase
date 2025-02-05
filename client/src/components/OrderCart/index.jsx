@@ -11,7 +11,7 @@ const OrderCart = ({ itemCount }) => {
         content={CartContent}
         trigger="click"
         placement="bottomRight"
-        className="text-[#242424] hover:bg-amber-300 hover:text-white rounded-md cursor-pointer"
+        className="text-[#242424] hover:bg-amber-400 hover:text-white rounded-md cursor-pointer"
         >
       <div className="p-2">  
         <Badge

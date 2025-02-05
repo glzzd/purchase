@@ -72,3 +72,29 @@ export const getProductTypes = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+
+export const getSpecifications = async (req, res) => {
+    try {
+        const { selectedProductType } = req.params; 
+
+        
+
+        const categoryType = await SpecificationModel.findById(selectedProductType)
+
+            
+        
+    
+
+        const specifications = categoryType.values.map(spec => ({
+            id: spec.id, 
+            name: spec.value,
+            placeholder: spec.example 
+        }));
+
+        res.status(200).json(specifications); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+};
