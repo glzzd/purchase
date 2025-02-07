@@ -9,6 +9,8 @@ import {
 } from "../../../api/categoryApi";
 import { Button, ConfigProvider, Flex, Segmented, Tooltip } from "antd";
 import { Info } from "lucide-react";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const MakeOrder = () => {
   const { userData } = useContext(AppContext);
@@ -28,6 +30,11 @@ const MakeOrder = () => {
 
   const [specifications, setSpecifications] = useState([]);
   const [specValues, setSpecValues] = useState({});
+
+  const [orderFor, setOrderFor] = useState("");
+  const [orderCount, setOrderCount] = useState(null);
+  const [orderNote, setOrderNote] = useState("");
+
 
   const [error, setError] = useState("");
 
@@ -66,17 +73,66 @@ const MakeOrder = () => {
     setSelectedProductType(e.target.value);
     setError("");
   };
-
+  const handleOrderForChange = (e) => {
+    setOrderFor(e.target.value); 
+    console.log(e.target.value); 
+    setError("");
+  };
+  const handleOrderCountChange = (e) => {
+    setOrderCount(e.target.value); 
+    setError("");
+  };
+  const handleOrderNoteChange = (e) => {
+    setOrderNote(e.target.value); 
+    setError("");
+  };
+ 
   const handleSpecChange = (name, value) => {
     setSpecValues((prevValues) => ({
       ...prevValues,
       [name]: value,
     }));
   };
-  const handleSubmit = () => {
-    if (!selectedMainCategory) {
-      setError("Zəhmət olmasa Ana Kateqoriyanı seçin.");
-    } else {
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!selectedMainCategory || !selectedSubCategory || !selectedProduct || !selectedProductType) {
+      setError("Zəhmət olmasa bütün xanaları doldurun.");
+      return;
+    }
+    const productSpecifications = Object.entries(specValues).map(([key, value]) => ({
+      name: key,
+      value,
+    }));
+
+    const orderData = {
+      order_for: orderFor,
+      product: selectedProduct,
+      product_type: selectedProductType,
+      product_specifications: productSpecifications,
+      order_count: orderCount, // Sizin `Sayı` input dəyərindən götürülməlidir
+      order_note: orderNote, // Qeydlər sahəsindən alınacaqsa doldurun
+    };
+
+    try {
+
+      const response = await fetch("http://localhost:5001/api/backet/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+        credentials:"include"
+      });
+  
+      const result = await response.json();
+      if (result.success) {
+        toast.success("Məhsul səbətə əlavə edildi");
+      } else {
+        toast.error(result.message || "Xəta baş verdi.");
+      }
+    } catch (error) {
+      setError("Səbətə əlavə etmək alınmadı.");
+      console.error(error);
     }
   };
 
@@ -145,52 +201,44 @@ const MakeOrder = () => {
   }, [selectedProductType]);
   const text = (
     <div className="space-y-2 text-white text-[12px]">
-      <p>
-        1. Məhsulları seçərək səbətinizə əlavə edin
-      </p>
-      <p>
-        2. Səbətinizi təstiqedin
-      </p>
-      <p>
-        3. Sistem avtomatik olaraq satınalma raportu generasiya edəcək
-      </p>
-      <p>
-        4. Sənədi yükləyin və sənəd dövriyyəsinə daxil edin
-      </p>
+      <p>1. Məhsulları seçərək səbətinizə əlavə edin</p>
+      <p>2. Səbətinizi təstiqedin</p>
+      <p>3. Sistem avtomatik olaraq satınalma raportu generasiya edəcək</p>
+      <p>4. Sənədi yükləyin və sənəd dövriyyəsinə daxil edin</p>
     </div>
   );
   return (
     <div className="bg-white rounded-md p-4 flex flex-col">
       <div className="flex items-center gap-5">
-        <span className="text-2xl font-bold">
-          Satınalma sifarişi{" "}
-        </span>
-          <Tooltip
-            placement="right"
-            title={text}
-            arrow={mergedArrow}
-            overlayInnerStyle={{
-              width: "400px",
-            }}
-          >
-            <Info className="text-blue-500"/>
-          </Tooltip>
+        <span className="text-2xl font-bold">Satınalma sifarişi </span>
+        <Tooltip
+          placement="right"
+          title={text}
+          arrow={mergedArrow}
+          overlayInnerStyle={{
+            width: "400px",
+          }}
+        >
+          <Info className="text-blue-500" />
+        </Tooltip>
       </div>
 
-      <div className="py-5 text-gray-200">
+      <div className="py-5 text-gray-200 flex">
         <hr />
       </div>
-      <div className="flex justify-between">
-        <div className="mb-4 w-[200px]">
-          <label htmlFor="category" className="text-lg font-medium">
+      <div className="">
+
+      
+        <div className="mb-4">
+          <label htmlFor="category" className="block text-lg font-medium">
             Ana Kateqoriya:
           </label>
           <select
             id="category"
             value={selectedMainCategory}
             onChange={handleMainCategoryChange}
-            className="w-[250px] p-2 mt-2 border rounded-lg shadow-sm"
-          >
+            className="w-full p-2 mt-2 border rounded-lg shadow-sm"
+            >
             <option value="" disabled>
               Ana Kateqoriyanı Seçin
             </option>
@@ -201,7 +249,7 @@ const MakeOrder = () => {
             ))}
           </select>
         </div>
-      </div>
+  
 
       {selectedMainCategory && (
         <div className="mb-4">
@@ -213,7 +261,7 @@ const MakeOrder = () => {
             value={selectedSubCategory}
             onChange={handleSubCategoryChange}
             className="w-full p-2 mt-2 border rounded-lg shadow-sm"
-          >
+            >
             <option value="" disabled>
               Alt Kateqoriyanı Seçin
             </option>
@@ -231,7 +279,7 @@ const MakeOrder = () => {
           <label
             htmlFor="childCategoryType"
             className="block text-lg font-medium"
-          >
+            >
             Məhsul:
           </label>
           <select
@@ -239,7 +287,7 @@ const MakeOrder = () => {
             value={selectedProduct}
             onChange={handleProductChange}
             className="w-full p-2 mt-2 border rounded-lg shadow-sm"
-          >
+            >
             <option value="" disabled>
               Məhsulu Seçin
             </option>
@@ -262,7 +310,7 @@ const MakeOrder = () => {
             value={selectedProductType}
             onChange={handleProductTypeChange}
             className="w-full p-2 mt-2 border rounded-lg shadow-sm"
-          >
+            >
             <option value="" disabled>
               Məhsulun Tipini Seçin
             </option>
@@ -274,6 +322,7 @@ const MakeOrder = () => {
           </select>
         </div>
       )}
+      </div>
 
       {specifications.length > 0 && (
         <div className="mb-4 mt-4 p-4 bg-gray-100 border rounded-lg">
@@ -310,26 +359,28 @@ const MakeOrder = () => {
           <form action="">
             <div className="flex items-center justify-between">
               <div className="w-[500px] space-y-4">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="orderFor" className="text-lg font-medium">
-                    Kimin üçün:
-                  </label>
-                  <input
-                    type="text"
-                    id="orderFor"
-                    placeholder="Məsələn, İlkin Quluzadə"
-                    className="w-[300px] p-2 border rounded-lg shadow-sm"
-                    required
-                  />
-                </div>
+              <div className="flex items-center justify-between">
+  <label htmlFor="order_for" className="text-lg font-medium">
+    Kimin üçün:
+  </label>
+  <input
+    type="text"
+    id="order_for"
+    onChange={handleOrderForChange} 
+    placeholder="Məsələn, İlkin Quluzadə"
+    className="w-[300px] p-2 border rounded-lg shadow-sm"
+    required
+  />
+</div>
 
                 <div className="flex items-center justify-between">
-                  <label htmlFor="orderCount" className="text-lg font-medium">
+                  <label htmlFor="order_count" className="text-lg font-medium">
                     Sayı:
                   </label>
                   <input
                     type="number"
-                    id="orderCount"
+                    id="order_count"
+                    onChange={handleOrderCountChange}
                     required
                     placeholder="Məsələn, 1"
                     className="w-[300px] p-2 border rounded-lg shadow-sm"
@@ -353,6 +404,7 @@ const MakeOrder = () => {
               <div className="flex flex-1 px-4">
                 <textarea
                   cols={100}
+                  onChange={handleOrderNoteChange}
                   placeholder="Qeydlərinizi yazın..."
                   className="w-full p-2 border rounded-lg shadow-sm h-[100px] min-h-[100px]"
                 />
@@ -360,11 +412,11 @@ const MakeOrder = () => {
 
               <div className="flex items-center justify-center">
                 <button
-                  className=" bg-[#242424] cursor-pointer rounded-md border-2 border-[#242424] hover:border-amber-400 hover:bg-transparent h-[100px] w-[200px] font-bold text-amber-400 rounded-"
+                  className=" bg-[#242424] cursor-pointer rounded-md border-2 px-4 border-[#242424] hover:border-amber-400 hover:bg-transparent h-[100px] font-bold text-amber-400 rounded-"
                   type="submit"
                   onClick={handleSubmit}
                 >
-                  Sifarişə əlavə et
+                  Səbətə əlavə et
                 </button>
               </div>
             </div>

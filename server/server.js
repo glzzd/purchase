@@ -6,7 +6,7 @@ import  connectDB  from "./config/mongodb.js";
 import  {authRouter}  from "./routes/AuthRoutes.js";
 import  {userRouter}  from "./routes/UserRoutes.js";
 import { categoryRouter } from "./routes/CategoryRoutes.js";
-
+import { backetRouter } from "./routes/BacketRoutes.js";
 const app = express();
 const port = process.env.SERVER_PORT || 4000
 connectDB()
@@ -26,6 +26,7 @@ app.get('/',(req,res) => {
 app.use("/api/auth", authRouter)
 app.use("/api/user", userRouter)
 app.use("/api/category", categoryRouter)
+app.use("/api/backet", backetRouter)
 
 app.listen(port, () => console.log(
     "Server "+port+" nömrəli portda işləyir"

@@ -10,6 +10,17 @@ const structureSchema = new mongoose.Schema({
     isIndependent_division: {type:Boolean, default:false},
 })
 
+const backetSchema = new mongoose.Schema({
+    order_by: {type: String, required:true},
+    order_for: {type: String, required:true},
+    product: {type: String, required:true},
+    product_type: {type: String, required:true},
+    product_specifications: [{type: String}],
+    order_count: {type: Number, required:true},
+    order_reason: {type: String},
+    order_note: {type: String},
+})
+
 const userSchema = new mongoose.Schema({
     name: {type: String, required:true},
     surname: {type: String, required:true},
