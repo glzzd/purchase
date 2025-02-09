@@ -4,7 +4,7 @@ import {LogIn, LogOut} from 'lucide-react'
 import { AppContext } from '../../context/AppContext'
 
 const Navbar = () => {
-    const {userData, backendurl, setUserData, setisLoggedIn} = useContext(AppContext)
+    const {userData, backendurl, setUserData, setisLoggedIn, userBacket} = useContext(AppContext)
   return (
 
         <div className='flex justify-between py-5 px-10 '>
@@ -16,7 +16,7 @@ const Navbar = () => {
                 <div className='flex gap-2'>
                 {userData.surname} {userData.name}  
                 <LogOut />
-
+                
                 </div>
             </div>
                 </Link>): (

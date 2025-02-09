@@ -8,6 +8,7 @@ export const AppContextProvider = (props) => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL
     const [isLoggedIn, setisLoggedIn] = useState(false)
     const [userData, setUserData] = useState(false)
+    const [userBacket, setUserBacket] = useState([])
 
     const getAuthState = async () => {
       
@@ -17,6 +18,7 @@ export const AppContextProvider = (props) => {
             if(data.success){
                 setisLoggedIn(true)
                 getUserData()
+                getUserBacket()
             }
        
     }
@@ -32,6 +34,19 @@ export const AppContextProvider = (props) => {
         }
     }
 
+    const getUserBacket = async () => {
+        try {
+            axios.defaults.withCredentials=true
+            const {data} = await axios.get(backendUrl + '/api/backet/get-backet')
+            console.log("basket:", data);
+            
+            
+            data.success ? setUserBacket(data.backet) : toast.error(data.message)
+        } catch (error) {
+            toast.error(error.message)
+        }
+    }
+
     useEffect(()=>{
         getAuthState()
     },[])
@@ -41,6 +56,7 @@ export const AppContextProvider = (props) => {
         isLoggedIn,
         setisLoggedIn,
         userData,
+        userBacket,
         setUserData,
         getUserData
     }

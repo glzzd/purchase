@@ -127,6 +127,7 @@ const MakeOrder = () => {
       const result = await response.json();
       if (result.success) {
         toast.success("Məhsul səbətə əlavə edildi");
+        window.location.reload()
       } else {
         toast.error(result.message || "Xəta baş verdi.");
       }

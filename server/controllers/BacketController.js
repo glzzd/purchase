@@ -6,7 +6,7 @@ import SpecificationModel from "../models/SpecificationModel.js";
 
 export const addProductToBacket = async (req, res) => {
     
-    const { token } = req.cookies;
+  const { token } = req.cookies;
   const {
     order_for,
     product,
@@ -70,6 +70,85 @@ export const addProductToBacket = async (req, res) => {
 };
 
 
-// export const getUserBacket = async (req,res) => {
-//     const 
-// }
+export const getUserBacket = async (req,res) => {
+  const { token } = req.cookies; 
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Sistemə giriş etməmisiniz.",
+    });
+  }
+  try {
+    const secretKey = process.env.JWT_SECRET;
+    const decoded = jwt.verify(token, secretKey); 
+    const userId = decoded.id; 
+    const userBacket = await BacketModel.find({
+      order_by: userId,
+      is_raport_generated: false,
+    });
+    return res.status(200).json({
+      success: true,
+      backet: userBacket,
+    });
+    
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+export const deleteProductFromBacket = async (req, res) => {
+  const { token } = req.cookies;
+  console.log(req.body);
+  
+  const { itemId } = req.body;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Sistemə giriş etməmisiniz.",
+    });
+  }
+
+  if (!itemId) {
+    return res.status(400).json({
+      success: false,
+      message: "Silinəcək məhsulun ID-si qeyd edilməyib.",
+    });
+  }
+
+  try {
+    const secretKey = process.env.JWT_SECRET;
+    const decoded = jwt.verify(token, secretKey);
+    const userId = decoded.id;
+
+    // Silinəcək məhsulu tap
+    const product = await BacketModel.findOne({
+      _id: itemId,
+      order_by: userId,
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Məhsul tapılmadı və ya sizə məxsus deyil.",
+      });
+    }
+
+    // Məhsulu sil
+    await BacketModel.findByIdAndDelete(itemId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Məhsul səbətdən silindi.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
