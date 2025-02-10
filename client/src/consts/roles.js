@@ -42,7 +42,8 @@ export const roles = [
       },
       menuItems: [
      
-        { name: "Yeni Sifariş Yarat", link: "/orders/make-order" }
+        { name: "Yeni Sifariş Yarat", link: "/orders/make-order" },
+        { name: "Sifarişlərim", link: "/my-orders" }
       ],
     },
   ];

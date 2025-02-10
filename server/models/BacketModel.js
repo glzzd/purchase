@@ -12,9 +12,9 @@ const backetSchema = new mongoose.Schema({
     order_reason: {type: String},
     order_note: {type: String},
     is_raport_generated: {type:Boolean, default:false}
-})
+},{ timestamps: true } )
 
 
 
-const BacketModel = mongoose.models.backtet || mongoose.model("backet", backetSchema);
+const BacketModel = mongoose.models.backet || mongoose.model("backet", backetSchema);
 export default BacketModel

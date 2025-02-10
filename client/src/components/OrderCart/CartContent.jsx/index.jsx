@@ -30,6 +30,7 @@ const CartContent = () => {
   
       // Yanıtı JSON formatına çevir
       const data = await response.json();
+
   
       if (response.ok) {
         toast.success("Məhsul səbətdən silindi.");
@@ -58,14 +59,9 @@ const CartContent = () => {
       });
   
       if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "raport.docx";
-        a.click();
-        window.URL.revokeObjectURL(url);
-        toast.success("Raport başarıyla oluşturuldu.");
+        const data = await response.json();
+        toast.success(data.message);
+        window.location.reload()
       } else {
         const data = await response.json();
         toast.error(data.message || "Raport oluşturulamadı.");
@@ -75,6 +71,7 @@ const CartContent = () => {
       console.error(error);
     }
   };
+  
   
   
 

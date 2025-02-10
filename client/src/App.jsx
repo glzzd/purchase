@@ -9,6 +9,7 @@ import MainLayout from './layouts/MainLayout'
 import Dashboard from './pages/DashboardPage'
 import AllOrders from './pages/OrdersPage/AllOrdersPage'
 import MakeOrder from './pages/OrdersPage/MakeOrderPage'
+import Raports from './pages/RaportsPage'
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
         <Route path='/dashboard' element={<Dashboard/>} />
         <Route path='/orders/all-order' element={<AllOrders/>} />
         <Route path='/orders/make-order' element={<MakeOrder/>} />
+        <Route path='/my-orders' element={<Raports/>} />
 
         </Route>
 

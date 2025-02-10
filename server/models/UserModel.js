@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
     structure: {type:structureSchema}, 
     phone: {type: String},
     status: {type:String, enum:["active", "passive"], default:"active"}, 
-    systemRole: {type:String, enum:["superadmin","admin","user"], default:'user'},
+    systemRole: {type:String, enum:["superadmin","admin","user",'purchase_admin'], default:'user'},
     rank: {type:String},
     position: {type:String}
 })

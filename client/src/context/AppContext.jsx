@@ -38,7 +38,6 @@ export const AppContextProvider = (props) => {
         try {
             axios.defaults.withCredentials=true
             const {data} = await axios.get(backendUrl + '/api/backet/get-backet')
-            console.log("basket:", data);
             
             
             data.success ? setUserBacket(data.backet) : toast.error(data.message)

@@ -3,6 +3,7 @@ import BacketModel from "../models/BacketModel.js";
 import UserModel from "../models/UserModel.js";
 import CategoryModel from "../models/CategoryModel.js";
 import SpecificationModel from "../models/SpecificationModel.js";
+import OrderModel from "../models/OrderModel.js";
 
 export const addProductToBacket = async (req, res) => {
     
@@ -41,6 +42,7 @@ export const addProductToBacket = async (req, res) => {
         message: "İstifadəçi məlumatları alınmadı.",
       });
     }
+   
 
     const newBacket = new BacketModel({
       order_by: userId, 
@@ -51,9 +53,10 @@ export const addProductToBacket = async (req, res) => {
       product_specifications,
       order_count,
       order_reason,
-      order_note,
+      order_note
     });
     
+
     await newBacket.save();
 
     return res.status(200).json({

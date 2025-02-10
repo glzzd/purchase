@@ -7,6 +7,8 @@ import  {authRouter}  from "./routes/AuthRoutes.js";
 import  {userRouter}  from "./routes/UserRoutes.js";
 import { categoryRouter } from "./routes/CategoryRoutes.js";
 import { backetRouter } from "./routes/BacketRoutes.js";
+import { raportRouter } from "./routes/RaportRoutes.js";
+import { lotRouter } from "./routes/LotRoutes.js";
 const app = express();
 const port = process.env.SERVER_PORT || 4000
 connectDB()
@@ -27,6 +29,8 @@ app.use("/api/auth", authRouter)
 app.use("/api/user", userRouter)
 app.use("/api/category", categoryRouter)
 app.use("/api/backet", backetRouter)
+app.use("/api/raports", raportRouter)
+app.use("/api/lots", lotRouter)
 
 app.listen(port, () => console.log(
     "Server "+port+" nömrəli portda işləyir"

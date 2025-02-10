@@ -1,36 +1,45 @@
 import React, { useContext } from "react";
-import { Bell, Languages, LogOut, ShoppingCart } from "lucide-react";
+import { LogOut } from "lucide-react";
 import ModuleArea from "./Sidebar/ModuleArea";
-import { Popover, Badge } from "antd";
 import OrderCart from "./OrderCart";
 import { AppContext } from "../context/AppContext";
-
-const cartContent = (
-  <div>
-    <ul>
-      <li>Ürün 1 - $20</li>
-      <li>Ürün 2 - $30</li>
-      <li>Ürün 3 - $15</li>
-    </ul>
-    <div>
-      <strong>Toplam: $65</strong>
-    </div>
-  </div>
-);
+import {  useNavigate } from "react-router"; // react-router-dom kullanarak yönlendirme
 
 const Topbar = () => {
-       const { userBacket } = useContext(AppContext);
+  const navigate = useNavigate()
+  const { userBacket } = useContext(AppContext);
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/api/auth/logout', {
+        method: 'POST',  
+        credentials: 'include', 
+      
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        navigate('/login')
+      } else {
+        console.error('Çıxış edilmədi:', data.message);
+      }
+    } catch (error) {
+      console.error('Hata:', error);
+    }
+  };
+
   return (
     <div className="h-15 flex items-center justify-between px-4">
-      <div className="">
+      <div>
         <ModuleArea />
       </div>
       <div className="flex gap-4 items-center">
-
-    
         <OrderCart itemCount={userBacket.length} />
-       
-      
+        <LogOut
+          onClick={handleLogout} 
+          className="text-red-700 cursor-pointer"
+        />
       </div>
     </div>
   );

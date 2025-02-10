@@ -150,17 +150,15 @@ export const verifyOTPCode = async (req, res) => {
 
 
 export const userLogout = async (req, res) => {
-  const { email } = req.body;
+  const {token} =req.cookies
 
-  if (!email) {
-    return res.status(400).json({
-      success: false,
-      message: "E-mail tələb olunur.",
-    });
-  }
+  const secretKey = process.env.JWT_SECRET;
+ 
 
   try {
-    const user = await UserModel.findOne({ email });
+    const decoded = jwt.verify(token, secretKey);
+    const userEmail = decoded.email;
+    const user = await UserModel.findOne({ email:userEmail });
     if (!user) {
       return res.status(404).json({
         success: false,

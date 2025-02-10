@@ -68,20 +68,15 @@ export const fetchSubCategories = async (selectedMainCategory) => {
 
   export const fetchSpecifications = async (selectedProductType) => {
     try {
-      
-        console.log("selectedProductType: ",selectedProductType);
-        
+
       const response = await fetch(
         `${endpoints.host}${endpoints.specifications}${selectedProductType}`
       );
-      console.log(response);
+
       
       const data = await response.json();
-      console.log(data);
-    
-        data.map(spec => console.log("spec", spec)
-        )
-    
+
+
       
       return data.map((specification) => ({
         id: specification.id,

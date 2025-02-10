@@ -7,9 +7,8 @@ import {
   fetchSpecifications,
   fetchSubCategories,
 } from "../../../api/categoryApi";
-import { Button, ConfigProvider, Flex, Segmented, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import { Info } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-toastify";
 
 const MakeOrder = () => {
@@ -34,7 +33,6 @@ const MakeOrder = () => {
   const [orderFor, setOrderFor] = useState("");
   const [orderCount, setOrderCount] = useState(null);
   const [orderNote, setOrderNote] = useState("");
-
 
   const [error, setError] = useState("");
 
@@ -74,19 +72,18 @@ const MakeOrder = () => {
     setError("");
   };
   const handleOrderForChange = (e) => {
-    setOrderFor(e.target.value); 
-    console.log(e.target.value); 
+    setOrderFor(e.target.value);
     setError("");
   };
   const handleOrderCountChange = (e) => {
-    setOrderCount(e.target.value); 
+    setOrderCount(e.target.value);
     setError("");
   };
   const handleOrderNoteChange = (e) => {
-    setOrderNote(e.target.value); 
+    setOrderNote(e.target.value);
     setError("");
   };
- 
+
   const handleSpecChange = (name, value) => {
     setSpecValues((prevValues) => ({
       ...prevValues,
@@ -94,40 +91,46 @@ const MakeOrder = () => {
     }));
   };
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!selectedMainCategory || !selectedSubCategory || !selectedProduct || !selectedProductType) {
+    e.preventDefault();
+    if (
+      !selectedMainCategory ||
+      !selectedSubCategory ||
+      !selectedProduct ||
+      !selectedProductType
+    ) {
       setError("Zəhmət olmasa bütün xanaları doldurun.");
       return;
     }
-    const productSpecifications = Object.entries(specValues).map(([key, value]) => ({
-      name: key,
-      value,
-    }));
+    const productSpecifications = Object.entries(specValues).map(
+      ([key, value]) => ({
+        name: key,
+        value,
+      })
+    );
 
     const orderData = {
       order_for: orderFor,
       product: selectedProduct,
       product_type: selectedProductType,
       product_specifications: productSpecifications,
-      order_count: orderCount, // Sizin `Sayı` input dəyərindən götürülməlidir
-      order_note: orderNote, // Qeydlər sahəsindən alınacaqsa doldurun
+      order_count: orderCount,
+      order_note: orderNote,
     };
 
     try {
-
       const response = await fetch("http://localhost:5001/api/backet/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(orderData),
-        credentials:"include"
+        credentials: "include",
       });
-  
+
       const result = await response.json();
       if (result.success) {
         toast.success("Məhsul səbətə əlavə edildi");
-        window.location.reload()
+        window.location.reload();
       } else {
         toast.error(result.message || "Xəta baş verdi.");
       }
@@ -179,7 +182,6 @@ const MakeOrder = () => {
 
     const getProductTypes = async () => {
       const productTypes = await fetchProductTypes(selectedProduct);
-      console.log("productTypes: ", productTypes);
 
       setProductTypes(productTypes);
     };
@@ -194,7 +196,6 @@ const MakeOrder = () => {
 
     const getSpecifications = async () => {
       const specifications = await fetchSpecifications(selectedProductType);
-      console.log("specifications", specifications);
 
       setSpecifications(specifications);
     };
@@ -216,7 +217,7 @@ const MakeOrder = () => {
           placement="right"
           title={text}
           arrow={mergedArrow}
-          overlayInnerStyle={{
+          style={{
             width: "400px",
           }}
         >
@@ -228,8 +229,6 @@ const MakeOrder = () => {
         <hr />
       </div>
       <div className="">
-
-      
         <div className="mb-4">
           <label htmlFor="category" className="block text-lg font-medium">
             Ana Kateqoriya:
@@ -239,7 +238,7 @@ const MakeOrder = () => {
             value={selectedMainCategory}
             onChange={handleMainCategoryChange}
             className="w-full p-2 mt-2 border rounded-lg shadow-sm"
-            >
+          >
             <option value="" disabled>
               Ana Kateqoriyanı Seçin
             </option>
@@ -250,79 +249,78 @@ const MakeOrder = () => {
             ))}
           </select>
         </div>
-  
 
-      {selectedMainCategory && (
-        <div className="mb-4">
-          <label htmlFor="subCategory" className="block text-lg font-medium">
-            Alt Kateqoriya:
-          </label>
-          <select
-            id="subCategory"
-            value={selectedSubCategory}
-            onChange={handleSubCategoryChange}
-            className="w-full p-2 mt-2 border rounded-lg shadow-sm"
+        {selectedMainCategory && (
+          <div className="mb-4">
+            <label htmlFor="subCategory" className="block text-lg font-medium">
+              Alt Kateqoriya:
+            </label>
+            <select
+              id="subCategory"
+              value={selectedSubCategory}
+              onChange={handleSubCategoryChange}
+              className="w-full p-2 mt-2 border rounded-lg shadow-sm"
             >
-            <option value="" disabled>
-              Alt Kateqoriyanı Seçin
-            </option>
-            {subCategories.map((subCategory) => (
-              <option key={subCategory.id} value={subCategory.id}>
-                {subCategory.subCategoryName}
+              <option value="" disabled>
+                Alt Kateqoriyanı Seçin
               </option>
-            ))}
-          </select>
-        </div>
-      )}
+              {subCategories.map((subCategory) => (
+                <option key={subCategory.id} value={subCategory.id}>
+                  {subCategory.subCategoryName}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-      {selectedSubCategory && (
-        <div className="mb-4">
-          <label
-            htmlFor="childCategoryType"
-            className="block text-lg font-medium"
+        {selectedSubCategory && (
+          <div className="mb-4">
+            <label
+              htmlFor="childCategoryType"
+              className="block text-lg font-medium"
             >
-            Məhsul:
-          </label>
-          <select
-            id="childCategoryType"
-            value={selectedProduct}
-            onChange={handleProductChange}
-            className="w-full p-2 mt-2 border rounded-lg shadow-sm"
+              Məhsul:
+            </label>
+            <select
+              id="childCategoryType"
+              value={selectedProduct}
+              onChange={handleProductChange}
+              className="w-full p-2 mt-2 border rounded-lg shadow-sm"
             >
-            <option value="" disabled>
-              Məhsulu Seçin
-            </option>
-            {products.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.productName.toUpperCase()}
+              <option value="" disabled>
+                Məhsulu Seçin
               </option>
-            ))}
-          </select>
-        </div>
-      )}
+              {products.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.productName.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-      {selectedProduct && (
-        <div className="mb-4">
-          <label htmlFor="productType" className="block text-lg font-medium">
-            Məhsulun Tipi:
-          </label>
-          <select
-            id="productType"
-            value={selectedProductType}
-            onChange={handleProductTypeChange}
-            className="w-full p-2 mt-2 border rounded-lg shadow-sm"
+        {selectedProduct && (
+          <div className="mb-4">
+            <label htmlFor="productType" className="block text-lg font-medium">
+              Məhsulun Tipi:
+            </label>
+            <select
+              id="productType"
+              value={selectedProductType}
+              onChange={handleProductTypeChange}
+              className="w-full p-2 mt-2 border rounded-lg shadow-sm"
             >
-            <option value="" disabled>
-              Məhsulun Tipini Seçin
-            </option>
-            {productTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.productTypeName.toUpperCase()}
+              <option value="" disabled>
+                Məhsulun Tipini Seçin
               </option>
-            ))}
-          </select>
-        </div>
-      )}
+              {productTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.productTypeName.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {specifications.length > 0 && (
@@ -342,7 +340,7 @@ const MakeOrder = () => {
                   type="text"
                   id={`spec-${spec.id}`}
                   placeholder={`Məsələn, ${spec.specificationExample}`}
-                  value={specValues[spec.specificationName] || ""} // Değeri state'ten al
+                  value={specValues[spec.specificationName] || ""}
                   onChange={(e) =>
                     handleSpecChange(spec.specificationName, e.target.value)
                   } // Değişikliği yakala
@@ -360,19 +358,19 @@ const MakeOrder = () => {
           <form action="">
             <div className="flex items-center justify-between">
               <div className="w-[500px] space-y-4">
-              <div className="flex items-center justify-between">
-  <label htmlFor="order_for" className="text-lg font-medium">
-    Kimin üçün:
-  </label>
-  <input
-    type="text"
-    id="order_for"
-    onChange={handleOrderForChange} 
-    placeholder="Məsələn, İlkin Quluzadə"
-    className="w-[300px] p-2 border rounded-lg shadow-sm"
-    required
-  />
-</div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="order_for" className="text-lg font-medium">
+                    Kimin üçün:
+                  </label>
+                  <input
+                    type="text"
+                    id="order_for"
+                    onChange={handleOrderForChange}
+                    placeholder="Məsələn, İlkin Quluzadə"
+                    className="w-[300px] p-2 border rounded-lg shadow-sm"
+                    required
+                  />
+                </div>
 
                 <div className="flex items-center justify-between">
                   <label htmlFor="order_count" className="text-lg font-medium">
