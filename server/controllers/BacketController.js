@@ -105,7 +105,7 @@ export const getUserBacket = async (req,res) => {
 
 export const deleteProductFromBacket = async (req, res) => {
   const { token } = req.cookies;
-  console.log(req.body);
+
   
   const { itemId } = req.body;
 

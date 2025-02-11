@@ -62,7 +62,7 @@ export const getProductTypes = async (req, res) => {
         
 
        
-       console.log(productTypes);
+
        
         
 

@@ -9,6 +9,7 @@ import { categoryRouter } from "./routes/CategoryRoutes.js";
 import { backetRouter } from "./routes/BacketRoutes.js";
 import { raportRouter } from "./routes/RaportRoutes.js";
 import { lotRouter } from "./routes/LotRoutes.js";
+import { contractRouter } from "./routes/ContractRoutes.js";
 const app = express();
 const port = process.env.SERVER_PORT || 4000
 connectDB()
@@ -31,6 +32,7 @@ app.use("/api/category", categoryRouter)
 app.use("/api/backet", backetRouter)
 app.use("/api/raports", raportRouter)
 app.use("/api/lots", lotRouter)
+app.use("/api/contracts", contractRouter)
 
 app.listen(port, () => console.log(
     "Server "+port+" nömrəli portda işləyir"

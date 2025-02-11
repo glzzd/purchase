@@ -14,8 +14,10 @@ const AllOrders = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [lots, setLots] = useState([]);
+  const [contracts, setContracts] = useState([]); // Add state for contracts
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [viewedOrder, setViewedOrder] = useState(null);
+
   const defaultColDef = useMemo(() => {
     return {
       filter: "agTextColumnFilter",
@@ -47,7 +49,6 @@ const AllOrders = () => {
 
         if (response.ok) {
           const data = await response.json();
-
           setRowData(data.orders);
 
           setColDefs([
@@ -69,7 +70,7 @@ const AllOrders = () => {
               sortable: false,
               cellRenderer: (params) => {
                 return (
-                  <div className="">
+                  <div className="flex items-center">
                     {params.data && params.data._id ? (
                       <div className="flex items-center">
                         {params.data.order_status === "pending" && (
@@ -143,11 +144,35 @@ const AllOrders = () => {
       console.error("Lotlar yüklənərkən xəta baş verdi:", error);
     }
   };
+
+  const fetchContracts = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5001/api/contracts/all-contracts", // Assuming you have an endpoint for contracts
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setContracts(data.contracts); // Set the fetched contracts
+      } else {
+        console.error("Müqavilələr yüklənərkən xəta baş verdi");
+      }
+    } catch (error) {
+      console.error("Müqavilələr yüklənərkən xəta baş verdi:", error);
+    }
+  };
+
   const handleEdit = (order) => {
     setSelectedOrder(order);
     setIsModalVisible(true);
     fetchLots();
+    fetchContracts(); // Fetch contracts when editing an order
   };
+
   const handleSave = async () => {
     try {
       if (!selectedOrder) return;
@@ -178,6 +203,7 @@ const AllOrders = () => {
 
         setIsModalVisible(false);
         setSelectedOrder(null);
+        window.location.reload()
       } else {
         console.error("Məlumatların yenilənməsi zamanı xəta baş verdi.");
       }
@@ -187,8 +213,6 @@ const AllOrders = () => {
   };
 
   const handleDownload = async (raportId) => {
-
-
     try {
       const response = await fetch(
         `http://localhost:5001/api/raports/download/${raportId}`,
@@ -208,36 +232,7 @@ const AllOrders = () => {
         console.error("Raport yüklənərkən xəta baş verdi.");
       }
     } catch (error) {
-      console.error("Raport yüklənərkən xəta baş verdi.:", error);
-    }
-  };
-
-  const handleCreateLot = async () => {
-    try {
-      const response = await fetch("http://localhost:5001/api/lots/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          tenant: "Yeni İcarçı",
-          contract_no: "Yeni Müqavilə №",
-        }),
-      });
-
-      if (response.ok) {
-        const newLot = await response.json();
-
-        setLots((prevLots) => [...prevLots, newLot]);
-
-        toast.success("Yeni Lot uğurla yaradıldı");
-        window.location.reload();
-      } else {
-        console.error("Lot yaratma zamanı xəta baş verdi");
-        toast.error("Lot yaradılmadı.");
-      }
-    } catch (error) {
-      console.error("Lot yaratma zamanı xəta baş verdi:", error);
-      toast.error("Lot yaratma zamanı xəta baş verdi.");
+      console.error("Raport yüklənərkən xəta baş verdi:", error);
     }
   };
 
@@ -281,7 +276,7 @@ const AllOrders = () => {
       {loading ? (
         <div className="text-center text-gray-500">Sifarişlər yüklənir...</div>
       ) : (
-        <div style={{ height: 560 }}>
+        <div className="ag-theme-alpine" style={{ height: "565px" }}>
           <AgGridReact
             rowData={rowData}
             columnDefs={colDefs}
@@ -293,14 +288,47 @@ const AllOrders = () => {
         </div>
       )}
 
+      <Modal
+        title="Müqavilə və Lot Nömrəsi Redaktəsi"
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onOk={handleSave}
+      >
+        {selectedOrder && (
+          <>
+            <div className="mb-4">
+              <span className="block text-sm font-semibold">Lot Nömrəsi:</span>
+              <Select
+                value={selectedOrder.lot_no}
+                onChange={(value) => setSelectedOrder({ ...selectedOrder, lot_no: value })}
+                options={lots.map((lot) => ({ value: lot.lot_no, label: lot.lot_no }))}
+                style={{ width: "100%" }}
+              />
+            </div>
+            <div className="mb-4">
+              <span className="block text-sm font-semibold">Müqavilə Nömrəsi:</span>
+
+              <Select
+                value={selectedOrder.contract_no}
+                onChange={(value) => setSelectedOrder({ ...selectedOrder, contract_no: value })}
+                options={contracts.map((contract) => ({
+                  value: contract.contract_no,
+                  label: contract.contract_no,
+                }))}
+                style={{ width: "100%" }}
+              />
+            </div>
+          </>
+        )}
+      </Modal>
+
       <Drawer
-        title="Sifariş Məlumatları"
-        placement="right"
-        onClose={handleCloseDrawer}
+        title="Sifariş Detalları"
         open={isDrawerVisible}
+        onClose={handleCloseDrawer}
         width={400}
       >
-        {viewedOrder && (
+         {viewedOrder && (
           <div className="space-y-4">
             <div className="w-full bg-[#242424] text-center text-amber-400 p-5 rounded-2xl uppercase font-bold text-md">
               <span className="">
@@ -348,78 +376,6 @@ const AllOrders = () => {
           </div>
         )}
       </Drawer>
-      <Modal
-        title="Redaktə et"
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setIsModalVisible(false)}>
-            Ləğv et
-          </Button>,
-          <Button key="save" type="primary" onClick={handleSave}>
-            Təstiq et
-          </Button>,
-        ]}
-      >
-        {selectedOrder && (
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="lotSelect">Lot Seçin</label>
-              <div className="flex gap-2">
-                <Select
-                  id="lotSelect"
-                  value={selectedOrder.lot_no || undefined}
-                  onChange={(value) =>
-                    setSelectedOrder({ ...selectedOrder, lot_no: value })
-                  }
-                  style={{ width: "100%" }}
-                >
-                  {lots
-                    .filter((lot) => lot.lot_no)
-                    .map((lot) => (
-                      <Select.Option
-                        key={lot._id || lot.lot_no}
-                        value={lot.lot_no}
-                      >
-                        {lot.lot_name ? lot.lot_name : lot.lot_no}
-                      </Select.Option>
-                    ))}
-                </Select>
-
-                <Button type="primary" onClick={handleCreateLot}>
-                  Lot yarat
-                </Button>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="contractNo">Müqavilə №</label>
-              <Input
-                id="contractNo"
-                value={selectedOrder.contract_no}
-                onChange={(e) =>
-                  setSelectedOrder({
-                    ...selectedOrder,
-                    contract_no: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label htmlFor="tenant">İcarçı</label>
-              <Input
-                id="tenant"
-                value={selectedOrder.tenant}
-                onChange={(e) =>
-                  setSelectedOrder({
-                    ...selectedOrder,
-                    tenant: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };

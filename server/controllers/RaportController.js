@@ -8,6 +8,8 @@ import PizZip from 'pizzip';
 import UserModel from '../models/UserModel.js';
 import { makeNewOrder } from './OrderController.js';
 import RaportModel from '../models/RaportModel.js';
+import moment from "moment-timezone";
+
 
 const getCurrentDir = () => {
   const __filename = fileURLToPath(import.meta.url);
@@ -34,17 +36,21 @@ export const generateRaport = async (req, res) => {
     const decoded = jwt.verify(token, secretKey);
     const userId = decoded.id;
     const userDetails = await UserModel.findById(userId); // Kullanıcı detaylarını al
+
+
+    
     const userBacket = await BacketModel.find({
       order_by: userId,
       is_raport_generated: false,
     });
-
+    
     if (userBacket.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Səbətdə məlumat yoxdur.',
       });
     }
+    const orderDate = moment().tz("Asia/Baku").format("DD.MM.YYYY");
 
     const orders = userBacket.map((item, index) => ({
       no: index + 1,
@@ -52,18 +58,29 @@ export const generateRaport = async (req, res) => {
       product_type: item.product_type,
       order_for: item.order_for,
       order_count: item.order_count,
+      head_office: userDetails.structure?.head_office || "N/A", 
+      office: userDetails.structure?.office || "N/A",
+      department: userDetails.structure?.department || "",
+      division: userDetails.structure?.division || "",
+      rank: userDetails.rank || "N/A",
+      position: userDetails.position || "N/A",
       product_specifications: item.product_specifications.map((spec) => ({
         specification: spec.name,
         value: spec.value,
       })),
       order_note: item.order_note || "",
+      order_date: item.createdAt ? new Date(item.createdAt).toLocaleDateString('az-AZ') : "N/A",
     }));
-
-    // Siparişleri oluştur
     
-    // Raporu şablona yerleştir
+  
     doc.render({
       orders: orders,
+      head_office: userDetails.structure?.head_office || "N/A",
+      office: userDetails.structure?.office || "N/A",
+      position: userDetails.position || "N/A",
+      rank: userDetails.rank || "N/A",
+      order_by: `${userDetails.surname} ${userDetails.name}` || "N/A",
+      order_date: orderDate,
     });
     
     const buf = doc.getZip().generate({ type: 'nodebuffer' });
@@ -138,7 +155,7 @@ export const getUserRaports = async (req, res) => {
       // Eğer rol "user" ise sadece kendi raporlarını getir
       userRaports = await RaportModel.find({ raport_by: userId }).sort({ createdAt: -1 });
     } 
-    console.log(userRaports);
+
     if (userRaports.length === 0) {
       return res.status(404).json({
         success: false,
@@ -163,7 +180,7 @@ export const getUserRaports = async (req, res) => {
 export const downloadRaport = async (req, res) => {
   const { token } = req.cookies;
   const { raportId } = req.params; // URL parametresinden raportId alıyoruz
-  console.log(raportId);
+
   
   if (!token) {
     return res.status(401).json({
@@ -180,7 +197,7 @@ export const downloadRaport = async (req, res) => {
     const userId = decoded.id;
     const userDetails = await UserModel.findById(userId)
     const userRole = userDetails.systemRole; // Assuming systemRole is part of the token payload
-    console.log(userRole);
+
     
     let raport;
 
@@ -193,7 +210,7 @@ export const downloadRaport = async (req, res) => {
       raport = await RaportModel.findOne({ _id: raportId, raport_by: userId });
     }
     
-    console.log(raport);
+
     if (!raport) {
       return res.status(404).json({
         success: false,

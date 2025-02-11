@@ -5,7 +5,7 @@ import UserModel from "../models/UserModel.js";
 
 export const makeNewOrder = async (id, orders, raport) => {
     try {
-        console.log(raport);
+
         
       const user = await UserModel.findById(id);
       const userBacket = await BacketModel.find({ order_by: id, is_raport_generated: false });
@@ -69,7 +69,7 @@ export const makeNewOrder = async (id, orders, raport) => {
                 }
             })
         );
-        console.log(ordersWithRaports);
+
   
       // Respond with the modified orders that include raport information
       res.status(200).json({

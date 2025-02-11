@@ -45,7 +45,7 @@ const Raports = () => {
           setRowData(data.raports);
           setColDefs([
             { field: "raport_temp_no", headerName: "Müvəqqəti №", flex: 1 },
-            { field: "raport_no", headerName: "Raport №", flex: 1 },
+            // { field: "raport_no", headerName: "Raport №", flex: 1 },
             {
               headerName: "Əməliyyatlar",
               field: "operations",

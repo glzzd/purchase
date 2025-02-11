@@ -33,7 +33,7 @@ const OTPPage = () => {
 
           navigate('/reset-password')
         }else {
-          navigate('/dashboard')
+          navigate('/orders/make-order')
 
         }
       }else{
