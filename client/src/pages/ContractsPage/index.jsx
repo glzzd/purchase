@@ -10,6 +10,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const Contracts = () => {
   const [rowData, setRowData] = useState([]);
   const [colDefs, setColDefs] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isNewContractModalVisible, setIsNewContractModalVisible] = useState(false);
@@ -80,7 +81,13 @@ const Contracts = () => {
           setColDefs([
             { field: "contract_no", headerName: "Müqavilə №-si", flex: 1 },
             { field: "contract_name", headerName: "Müqavilənin adı", flex: 1 },
-            { field: "contract_between", headerName: "Qarşı tərəf", flex: 1 },
+            {
+              field: "contact_between",
+              headerName: "Qarşı tərəf",
+              valueGetter: (params) =>
+                params.data.company_name || "Məlumat yoxdur",
+              flex: 1,
+            },
             {
               field: "created_by",
               headerName: "Müqavilə yaradan şəxs",
@@ -146,8 +153,26 @@ const Contracts = () => {
         setLoading(false);
       }
     };
+    const fetchCompanies = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/api/companies/all-companies", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCompanies(data.companies || []);
+        } else {
+          console.error("Şirkətlər yüklənərkən xəta baş verdi.");
+        }
+      } catch (error) {
+        console.error("API sorğusu xətası:", error);
+      }
+    };
 
     fetchContracts();
+    fetchCompanies(); 
   }, []);
 
   const handleEdit = (lot) => {
@@ -236,6 +261,10 @@ const Contracts = () => {
       console.error("Yeni müqavilə əlavə edilərkən xəta baş verdi:", error);
     }
   };
+
+
+
+  
   return (
     <div className="bg-white rounded-md p-4 flex flex-col">
       <div className="flex justify-between">
@@ -270,52 +299,64 @@ const Contracts = () => {
         />
       </div>
       <Modal
-        title="Yeni Müqavilə"
-        open={isNewContractModalVisible}
-        onCancel={() => setIsNewContractModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setIsNewContractModalVisible(false)}>
-            Ləğv et
-          </Button>,
-          <Button key="save" type="primary" onClick={handleSaveNewContract}>
-            Təstiq et
-          </Button>,
-        ]}
-      >
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="contract_no"><span className="text-red-600">*</span>Müqavilənin nömrəsi</label>
-            <Input
-              id="contract_no"
-              name="contract_no"
-              required
-              value={newContract.contract_no}
-              onChange={handleNewContractChange}
-            />
-          </div>
-          <div>
-            <label htmlFor="contract_name">Müqavilənin adı</label>
-            <Input
-              id="contract_name"
-              name="contract_name"
-              
-              value={newContract.contract_name}
-              onChange={handleNewContractChange}
-            />
-          </div>
-          <div>
-            <label htmlFor="contract_between"><span className="text-red-600">*</span>Qarşı tərəf</label>
-            <Input
-              id="contract_between"
-              name="contract_between"
-              required
-              value={newContract.contract_between}
-              onChange={handleNewContractChange}
-            />
-          </div>
-          <span className="text-red-600">(*) Doldurulması vacib xanalar</span>
-        </div>
-      </Modal>
+  title="Yeni Müqavilə"
+  open={isNewContractModalVisible}
+  onCancel={() => setIsNewContractModalVisible(false)}
+  footer={[
+    <Button key="cancel" onClick={() => setIsNewContractModalVisible(false)}>
+      Ləğv et
+    </Button>,
+    <Button key="save" type="primary" onClick={handleSaveNewContract}>
+      Təstiq et
+    </Button>,
+  ]}
+>
+  <div className="space-y-4">
+    <div>
+      <label htmlFor="contract_no">
+        <span className="text-red-600">*</span>Müqavilənin nömrəsi
+      </label>
+      <Input
+        id="contract_no"
+        name="contract_no"
+        required
+        value={newContract.contract_no}
+        onChange={handleNewContractChange}
+      />
+    </div>
+    <div>
+      <label htmlFor="contract_name">Müqavilənin adı</label>
+      <Input
+        id="contract_name"
+        name="contract_name"
+        value={newContract.contract_name}
+        onChange={handleNewContractChange}
+      />
+    </div>
+    <div className="flex flex-col">
+      <label htmlFor="contract_between">
+        <span className="text-red-600">*</span>Qarşı tərəf
+      </label>
+      <Select
+        id="contract_between"
+        name="contract_between"
+        showSearch
+        placeholder="Şirkət seçin"
+        value={newContract.contract_between}
+        onChange={(value) => setNewContract({ ...newContract, contract_between: value })}
+        filterOption={(input, option) =>
+          option?.label.toLowerCase().includes(input.toLowerCase())
+        }
+        options={companies.map((company) => ({
+          value: company._id,
+          label: company.company_name,
+        }))}
+      />
+    </div>
+    <span className="text-red-600">(*) Doldurulması vacib xanalar</span>
+  </div>
+</Modal>
+
       <Modal
         title="Redaktə et"
         open={isModalVisible}
@@ -336,6 +377,7 @@ const Contracts = () => {
               <Input
                 id="contract_name"
                 value={selectedContract.contract_name}
+                
                 onChange={(e) =>
                   setSelectedContract({
                     ...selectedContract,
@@ -349,6 +391,7 @@ const Contracts = () => {
               <Input
                 id="contract_no"
                 value={selectedContract.contract_no}
+                
                 onChange={(e) =>
                   setSelectedContract({
                     ...selectedContract,
@@ -357,54 +400,63 @@ const Contracts = () => {
                 }
               />
             </div>
-            <div>
-              <label htmlFor="contract_between">Qarşı tərəf</label>
-              <Input
-                id="contract_between"
-                value={selectedContract.contract_between}
-                onChange={(e) =>
-                  setSelectedContract({
-                    ...selectedContract,
-                    contract_between: e.target.value,
-                  })
-                }
-              />
-            </div>
+            <div className="flex flex-col">
+  <label htmlFor="contract_between">Qarşı tərəf</label>
+  <Select
+  id="contract_between"
+  showSearch
+  placeholder="Şirkət seçin"
+  value={selectedContract.contract_between}
+  onChange={(value) =>
+    setSelectedContract({ ...selectedContract, contract_between: value })
+  }
+  filterOption={(input, option) =>
+    option?.label.toLowerCase().includes(input.toLowerCase())
+  } // Arama yaparken şirket adını filtreliyoruz
+  options={companies.map((company) => ({
+    value: company._id, // ID'yi value olarak kullanıyoruz
+    label: company.company_name, // Şirket adı burada gösterilecek
+  }))}
+>
+</Select>
+
+</div>
+
           </div>
         )}
        
       </Modal>
-       <Drawer
-              title="Müqavilə Məlumatları"
-              open={isDrawerVisible}
-              onClose={handleCloseDrawer}
-              width={400}
-            >
-              {viewedContract && (
-                <div className="space-y-4">
+      <Drawer
+  title="Müqavilə Məlumatları"
+  open={isDrawerVisible}
+  onClose={handleCloseDrawer}
+  width={400}
+>
+  {viewedContract && (
+    <div className="space-y-4">
+      <div className="w-full bg-[#242424] text-center text-amber-400 p-5 rounded-2xl uppercase font-bold text-md">
+        <span>MÜQAVİLƏ №: {viewedContract.contract.contract_no}</span>
+      </div>
+      <div className="w-full bg-amber-200 p-2">
+        <strong>Müqavilənin adı:</strong> {viewedContract.contract.contract_name}
+      </div>
+      <div>
+        <strong>Qarşı tərəf:</strong>{" "}
+        {viewedContract.contract.contract_between_name || "Bilinmir"}
+      </div>
+      <div>
+        <strong>Müqavilə yaradan:</strong>{" "}
+        {viewedContract.contract.created_by_details?.rank}{" "}
+        {viewedContract.contract.created_by_details?.fullname}
+      </div>
+      <div>
+        <strong>Müqavilənin yaranma tarixi:</strong>{" "}
+        {viewedContract.contract.formattedCreatedAt}
+      </div>
+    </div>
+  )}
+</Drawer>
 
-                  <div className="w-full bg-[#242424] text-center text-amber-400 p-5 rounded-2xl uppercase font-bold text-md">
-                    <span>MÜQAVİLƏ №: {viewedContract.contract.contract_no}</span>
-                  </div>
-                  <div className="w-full bg-amber-200 p-2">
-                    <strong>Müqavilənin adı:</strong> {viewedContract.contract.contract_name}
-                  </div>
-                  <div >
-                    <strong>Qarşı tərəf:</strong> {viewedContract.contract.contract_between}
-                  </div>
-                  <div >
-                    <strong>Müqavilə yaradan:</strong> {viewedContract.contract.created_by_details.rank} {viewedContract.contract.created_by_details.fullname}
-                  </div>
-                  <div >
-                    <strong>Müqavilənin yaranma tarixi:</strong> {viewedContract.contract.formattedCreatedAt}
-                  </div>
-                  <div>
-                    {/* <strong>Yaradan şəxsin adı:</strong> {viewedContract.created_by_details.name} */}
-                  </div>
-                  
-                </div>
-              )}
-            </Drawer>
     </div>
   );
 };

@@ -4,6 +4,8 @@ import { Download, Edit, Eye, Info, Plus } from "lucide-react";
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { toast } from "react-toastify";
+import moment from "moment-timezone";
+
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const Lots = () => {
@@ -14,6 +16,8 @@ const Lots = () => {
   const [selectedLot, setSelectedLot] = useState(null);
   const [contracts, setContracts] = useState([]);
   const [selectedContract, setSelectedContract] = useState({});
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState({});
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [viewedLot, setViewedLot] = useState(null);
 
@@ -47,20 +51,45 @@ const Lots = () => {
     );
     if (response.ok) {
       const data = await response.json();
-    
-      
+
       setViewedLot(data);
     }
     setIsDrawerVisible(true);
   };
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5001/api/user/all-users",
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          setUsers(data.users);
+        }
+      } catch (error) {
+        console.error("İcraçılar yüklənərkən xəta baş verdi:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     const fetchLots = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/lots/get-all-lots", {
-          method: "GET",
-          credentials: "include",
-        });
+        const response = await fetch(
+          "http://localhost:5001/api/lots/get-all-lots",
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -69,7 +98,26 @@ const Lots = () => {
             { field: "lot_no", headerName: "Lot №-si", flex: 1 },
             { field: "lot_name", headerName: "Lotun adı", flex: 1 },
             { field: "contract_no", headerName: "Əlaqəli müqavilə", flex: 1 },
-            { field: "createdAt", headerName: "Lotun yaranma tarixi", flex: 1 },
+            {
+              field: "tenant",
+              headerName: "İcraçı şəxs",
+              flex: 1,
+              valueGetter: (params) => {
+                const tenant = params.data.tenant;
+                return tenant
+                  ? `${tenant.surname} ${tenant.name}`
+                  : "Təyin edilməyib";
+              },
+            },
+            {
+              field: "createdAt",
+              headerName: "Lotun yaranma tarixi",
+              flex: 1,
+              valueFormatter: (params) => {
+                // createdAt alanını Azerbaycan saatine göre formatla
+                return moment(params.value).tz("Asia/Baku").format("DD.MM.YYYY");
+              },
+            },
             {
               headerName: "Əməliyyatlar",
               field: "operations",
@@ -121,15 +169,18 @@ const Lots = () => {
     };
 
     fetchLots();
-  }, []); 
+  }, []);
 
   useEffect(() => {
     const fetchContracts = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/contracts/all-contracts", {
-          method: "GET",
-          credentials: "include",
-        });
+        const response = await fetch(
+          "http://localhost:5001/api/contracts/all-contracts",
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -156,11 +207,10 @@ const Lots = () => {
       const response = await fetch("http://localhost:5001/api/lots/create", {
         method: "POST",
         credentials: "include",
-        
       });
 
       if (response.ok) {
-        window.location.reload()
+        window.location.reload();
         toast.success("Yeni lot əlavə edildi");
       } else {
         toast.error("Lot əlavə edilmədi");
@@ -173,7 +223,6 @@ const Lots = () => {
   const handleSave = async () => {
     try {
       if (!selectedLot) return;
-
       const response = await fetch(
         `http://localhost:5001/api/lots/update/${selectedLot._id}`,
         {
@@ -184,6 +233,7 @@ const Lots = () => {
           body: JSON.stringify({
             lot_name: selectedLot.lot_name,
             contract_no: selectedContract.contract_no,
+            tenant: selectedUser._id,
           }),
         }
       );
@@ -191,13 +241,14 @@ const Lots = () => {
       if (response.ok) {
         const updatedLot = await response.json();
 
-        
         setRowData((prevRowData) =>
-          prevRowData.map((lot) => (lot._id === updatedLot._id ? updatedLot : lot))
+          prevRowData.map((lot) =>
+            lot._id === updatedLot._id ? updatedLot : lot
+          )
         );
 
         setIsModalVisible(false);
-        window.location.reload()
+        window.location.reload();
         setSelectedLot(null);
         setSelectedContract({});
       } else {
@@ -213,12 +264,19 @@ const Lots = () => {
       <div className="flex justify-between">
         <div className="flex items-center gap-5">
           <span className="text-2xl font-bold">Bütün lotlar</span>
-          <Tooltip placement="right" title={text} arrow={true} style={{ width: "400px" }}>
+          <Tooltip
+            placement="right"
+            title={text}
+            arrow={true}
+            style={{ width: "400px" }}
+          >
             <Info className="text-blue-500" />
           </Tooltip>
         </div>
         <div>
-          <Button onClick={handleNewLot}><Plus /> Yeni Lot</Button>
+          <Button onClick={handleNewLot}>
+            <Plus /> Yeni Lot
+          </Button>
         </div>
       </div>
       <div className="py-5 text-gray-200 flex">
@@ -237,60 +295,100 @@ const Lots = () => {
       </div>
 
       <Modal
-        title="Redaktə et"
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setIsModalVisible(false)}>
-            Ləğv et
-          </Button>,
-          <Button key="save" type="primary" onClick={handleSave}>
-            Təstiq et
-          </Button>,
-        ]}
-      >
-        {selectedLot && (
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="lot_name">Lotun adı</label>
-              <Input
-                id="lot_name"
-                value={selectedLot.lot_name}
-                onChange={(e) =>
-                  setSelectedLot({
-                    ...selectedLot,
-                    lot_name: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label htmlFor="contract_no">Müqaviləni seçin</label>
-              <Select
-                id="contract_no"
-                showSearch
-                value={selectedContract.contract_no || undefined}
-                onChange={(value) =>
-                  setSelectedContract({ ...selectedContract, contract_no: value })
-                }
-                style={{ width: "100%" }}
+  title="Redaktə et"
+  open={isModalVisible}
+  onCancel={() => setIsModalVisible(false)}
+  footer={[
+    <Button key="cancel" onClick={() => setIsModalVisible(false)}>
+      Ləğv et
+    </Button>,
+    <Button key="save" type="primary" onClick={handleSave}>
+      Təstiq et
+    </Button>,
+  ]}
+>
+  {selectedLot && (
+    <div className="space-y-4">
+      <div>
+        <label htmlFor="lot_name">Lotun adı</label>
+        <Input
+          id="lot_name"
+          value={selectedLot.lot_name}
+          onChange={(e) =>
+            setSelectedLot({
+              ...selectedLot,
+              lot_name: e.target.value,
+            })
+          }
+        />
+      </div>
+      <div>
+        <label htmlFor="contract_no">Müqaviləni seçin</label>
+        <Select
+          id="contract_no"
+          showSearch
+          value={selectedContract.contract_no || undefined}
+          onChange={(value) =>
+            setSelectedContract({
+              ...selectedContract,
+              contract_no: value,
+            })
+          }
+          style={{ width: "100%" }}
+        >
+          {contracts
+            .filter((contract) => contract.contract_no)
+            .map((contract) => (
+              <Select.Option
+                key={contract._id || contract.contract_no}
+                value={contract.contract_no}
               >
-               
-                {contracts
-                  .filter((contract) => contract.contract_no)
-                  .map((contract) => (
-                    <Select.Option
-                      key={contract._id || contract.contract_no}
-                      value={contract.contract_no}
-                    >
-                      {contract.contract_no}
-                    </Select.Option>
-                  ))}
-              </Select>
-            </div>
-          </div>
-        )}
-      </Modal>
+                {contract.contract_no}
+              </Select.Option>
+            ))}
+        </Select>
+      </div>
+      <div>
+        <label htmlFor="tenant">İcraçını seçin</label>
+        <Select
+          id="tenant"
+          showSearch
+          value={
+            selectedLot?.tenant
+              ? `${selectedLot.tenant.surname} ${selectedLot.tenant.name}`
+              : undefined
+          }
+          onChange={(value) => {
+            // Tenant seçimi yapıldığında hem selectedLot hem de selectedUser güncellenir
+            setSelectedLot({
+              ...selectedLot,
+              tenant: users.find((user) => user._id === value) || null, // Kullanıcıyı seçer
+            });
+            setSelectedUser(users.find((user) => user._id === value) || {});
+          }}
+          style={{ width: "100%" }}
+          filterOption={(input, option) => {
+            if (option && option.children) {
+              // `option.children` öğesini string olarak alıp arama yapıyoruz
+              const optionChildren = option.children.toString().toLowerCase();
+              return optionChildren.includes(input.toLowerCase());
+            }
+            return false;
+          }}
+        >
+          {users
+            .filter((user) => user.name) // Geçerli kullanıcıları filtreler
+            .map((user) => (
+              <Select.Option key={user._id} value={user._id}>
+                {user.surname} {user.name}
+              </Select.Option>
+            ))}
+        </Select>
+      </div>
+    </div>
+  )}
+</Modal>
+
 
       <Drawer
         title="Lot Məlumatları"
@@ -306,17 +404,20 @@ const Lots = () => {
             <div className="w-full bg-amber-200 p-2">
               <strong>Lot adı:</strong> {viewedLot.data.lot_name}
             </div>
-            <div >
-              <strong>Lot ilə əlaqəli müqavilə №-si:</strong> {viewedLot.data.contract_no}
+            <div>
+              <strong>Lot ilə əlaqəli müqavilə №-si:</strong>{" "}
+              {viewedLot.data.contract_no}
             </div>
             <div>
               <strong>Yaradan şəxsin adı:</strong> {viewedLot.created_by.name}
             </div>
             <div>
-            <strong>Yaradan şəxsin soyadı:</strong> {viewedLot.created_by.surname}
+              <strong>Yaradan şəxsin soyadı:</strong>{" "}
+              {viewedLot.created_by.surname}
             </div>
             <div>
-            <strong>Yaradan şəxsin ata adı:</strong> {viewedLot.created_by.fathername}
+              <strong>Yaradan şəxsin ata adı:</strong>{" "}
+              {viewedLot.created_by.fathername}
             </div>
             <div>
               <strong>Yaranma tarixi №:</strong> {viewedLot.data.createdAt}

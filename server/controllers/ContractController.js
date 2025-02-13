@@ -2,6 +2,7 @@ import ContractModel from "../models/ContractModel.js";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/UserModel.js";
 import moment from "moment-timezone";
+import CompanyModel from "../models/CompanyModel.js";
 
 export const createNewContract = async (req, res) => {
   const { contract_name, contract_no, contract_between } = req.body;
@@ -61,51 +62,64 @@ export const createNewContract = async (req, res) => {
 
 
 export const getContractDetails = async (req, res) => {
-    const { contractId } = req.params;
-  
-    try {
-      const contract = await ContractModel.findById(contractId);
-  
-      if (!contract) {
-        return res.status(404).json({
-          success: false,
-          message: "Müqavilə tapılmadı.",
-        });
-      }
-  
-      const contractCreatorDetails = await UserModel.findById(contract.created_by);
-  
-      if (!contractCreatorDetails) {
-        return res.status(404).json({
-          success: false,
-          message: "Müqaviləni yaradan istifadəçi tapılmadı.",
-        });
-      }
-      const formattedCreatedAt = moment(contract.createdAt)
-      .tz("Asia/Baku")
-      .format("DD.MM.YYYY HH:mm:ss");
-      
-      res.status(200).json({
-        success: true,
-        contract: {
-          ...contract.toObject(),
-          formattedCreatedAt,
-          created_by_details: {
-            fullname: `${contractCreatorDetails.surname} ${contractCreatorDetails.name} ${contractCreatorDetails.fathername}`,
-            rank: contractCreatorDetails.rank,
-            position: contractCreatorDetails.position,
-            structure: contractCreatorDetails.structure,
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Müqavilə detalları çəkilərkən xəta baş verdi:", error.message);
-      res.status(500).json({
+  const { contractId } = req.params;
+
+  try {
+    // Müqaviləni ID ilə tapırıq
+    const contract = await ContractModel.findById(contractId);
+
+    if (!contract) {
+      return res.status(404).json({
         success: false,
-        message: "Müqavilə detalları çəkilərkən xəta baş verdi.",
+        message: "Müqavilə tapılmadı.",
       });
     }
-  };
+
+    // Müqaviləni yaradan istifadəçini tapırıq
+    const contractCreatorDetails = await UserModel.findById(contract.created_by);
+
+    if (!contractCreatorDetails) {
+      return res.status(404).json({
+        success: false,
+        message: "Müqaviləni yaradan istifadəçi tapılmadı.",
+      });
+    }
+
+    // Müqavilədə göstərilən qarşı tərəf şirkətin adını tapırıq
+    let companyDetails = null;
+    if (contract.contract_between) {
+      companyDetails = await CompanyModel.findById(contract.contract_between);
+    }
+
+    // Müqavilənin yaranma tarixi formatlanır
+    const formattedCreatedAt = moment(contract.createdAt)
+      .tz("Asia/Baku")
+      .format("DD.MM.YYYY HH:mm:ss");
+
+    // Müqavilə detallarını qaytarırıq
+    res.status(200).json({
+      success: true,
+      contract: {
+        ...contract.toObject(),
+        formattedCreatedAt,
+        created_by_details: {
+          fullname: `${contractCreatorDetails.surname} ${contractCreatorDetails.name} ${contractCreatorDetails.fathername}`,
+          rank: contractCreatorDetails.rank,
+          position: contractCreatorDetails.position,
+          structure: contractCreatorDetails.structure,
+        },
+        contract_between_name: companyDetails ? companyDetails.company_name : "Bilinmir",
+      },
+    });
+  } catch (error) {
+    console.error("Müqavilə detalları çəkilərkən xəta baş verdi:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Müqavilə detalları çəkilərkən xəta baş verdi.",
+    });
+  }
+};
+
 
   export const getAllContracts = async (req, res) => {
     try {
@@ -120,21 +134,35 @@ export const getContractDetails = async (req, res) => {
           message: "Müqavilələr tapılmadı.",
         });
       }
-      
-      const contractsWithDetails = contracts.map((contract) => {
-        const createdByDetails = contract.created_by ? {
-          fullname: `${contract.created_by.surname} ${contract.created_by.name} ${contract.created_by.fathername}`,
-          rank: contract.created_by.rank,
-          position: contract.created_by.position,
-          structure: contract.created_by.structure,
-        } : null;
-      
-        return {
-          ...contract.toObject(),
-          created_by_details: createdByDetails,
-        };
-      });
-      
+  
+      // Contractları işleyip, contract_between alanını company_name ile zenginleştir
+      const contractsWithDetails = await Promise.all(
+        contracts.map(async (contract) => {
+          // created_by detayları
+          const createdByDetails = contract.created_by
+            ? {
+                fullname: `${contract.created_by.surname} ${contract.created_by.name} ${contract.created_by.fathername}`,
+                rank: contract.created_by.rank,
+                position: contract.created_by.position,
+                structure: contract.created_by.structure,
+              }
+            : null;
+  
+          let companyName = null;
+          if (contract.contract_between) {
+            const company = await CompanyModel.findById(contract.contract_between);
+            if (company) {
+              companyName = company.company_name;
+            }
+          }
+  
+          return {
+            ...contract.toObject(),
+            created_by_details: createdByDetails,
+            company_name: companyName, 
+          };
+        })
+      );
   
       res.status(200).json({
         success: true,
@@ -148,6 +176,7 @@ export const getContractDetails = async (req, res) => {
       });
     }
   };
+  
   
 
   export const updateContractDetails = async (req, res) => {

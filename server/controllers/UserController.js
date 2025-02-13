@@ -68,3 +68,24 @@ export const getSignedData = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 }
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await UserModel.find()
+    if (!users) {
+      return res.status(404).json({
+        success: false,
+        message: "İstifadəçi tapılmadı.",
+      });
+    }
+    res.json({
+      success:true,
+      users
+    })
+    
+  } catch(error){
+    res.json({ success: false, message: error.message });
+  }
+}
+
+

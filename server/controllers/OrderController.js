@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import BacketModel from "../models/BacketModel.js";
+import LotModel from "../models/LotModel.js";
 import OrderModel from "../models/OrderModel.js";
 import RaportModel from "../models/RaportModel.js";
 import UserModel from "../models/UserModel.js";
@@ -43,38 +45,44 @@ export const makeNewOrder = async (id, orders, raport) => {
     try {
       // Find all orders, sorted by createdAt (descending)
       const orders = await OrderModel.find().sort({ createdAt: -1 }); // Sort by 'createdAt' in descending order
-
+  
       // If no orders are found
       if (orders.length === 0) {
-          return res.status(404).json({
-              success: false,
-              message: 'Sifariş tələbi tapılmadı.',
-            });
-        }
-        
-        // Fetch related report details for each order
-        const ordersWithRaports = await Promise.all(
-            orders.map(async (order) => {
-                const raport = await RaportModel.findById(order.raport_id); // Assuming raport_id is in the order model
-                if (raport) {
-                    return {
-                        ...order.toObject(), // Convert mongoose document to plain object
-                        raport_by: raport.raport_by,
-                        raport_temp_no: raport.raport_temp_no,
-                        raport_no: raport.raport_no,
-                        raport_url: raport.raport_url,
-                    };
-                } else {
-                    return order.toObject(); // In case there's no matching raport, return the order only
-                }
-            })
-        );
-
+        return res.status(404).json({
+          success: false,
+          message: 'Sifariş tələbi tapılmadı.',
+        });
+      }
   
-      // Respond with the modified orders that include raport information
+      // Fetch related report details and tenant details for each order
+      const ordersWithRaportsAndTenant = await Promise.all(
+        orders.map(async (order) => {
+          // Fetch report details
+          const raport = await RaportModel.findById(order.raport_id); // Assuming raport_id is in the order model
+          
+          // Fetch tenant details if tenant is valid
+          let tenant = null;
+          if (order.tenant && mongoose.Types.ObjectId.isValid(order.tenant)) {
+            tenant = await UserModel.findById(order.tenant); // Only fetch tenant if it's a valid ObjectId
+          }  
+          // Build the order with raport and tenant info
+          const orderWithDetails = {
+            ...order.toObject(), // Convert mongoose document to plain object
+            raport_by: raport ? raport.raport_by : null,
+            raport_temp_no: raport ? raport.raport_temp_no : null,
+            raport_no: raport ? raport.raport_no : null,
+            raport_url: raport ? raport.raport_url : null,
+            tenant: tenant ? `${tenant.surname} ${tenant.name}` : "Təyin edilməyib", // Tenant full name or "Təyin edilməyib"
+          };
+  
+          return orderWithDetails;
+        })
+      );
+  
+      // Respond with the modified orders that include raport and tenant information
       res.status(200).json({
         success: true,
-        orders: ordersWithRaports, // Return orders along with raport details
+        orders: ordersWithRaportsAndTenant, // Return orders along with raport and tenant details
       });
     } catch (error) {
       console.error('Hata:', error.message);
@@ -83,12 +91,29 @@ export const makeNewOrder = async (id, orders, raport) => {
         message: 'Sifarişlər alınırken bir hata oluştu.',
       });
     }
-};
+  };
+  
+  
 
 export const updateOrder = async (req, res) => {
   try {
     const { id } = req.params;
-    const { lot_no, contract_no, tenant } = req.body;
+    const { lot_no } = req.body;
+
+    // Lot'u bul
+    const lot = await LotModel.findOne({ lot_no });
+    if (!lot) {
+      return res.status(404).json({ message: "Lot not found" });
+    }
+
+    console.log(lot);
+    const tenant = lot.tenant ? lot.tenant : null
+    
+
+    
+    
+    // Contract numarasını kontrol et
+    const contract = lot.contract_no ? `${lot.contract_no}` : "Təyin edilməyib";
 
     // Order'ı bul ve güncelle
     const updatedOrder = await OrderModel.findByIdAndUpdate(
@@ -96,17 +121,18 @@ export const updateOrder = async (req, res) => {
       {
         $set: {
           lot_no,
-          contract_no,
-          tenant,
+          contract_no: contract,
+          tenant: tenant,
         },
       },
-      { new: true } 
+      { new: true } // Güncellenmiş dokümanı döndür
     );
 
     if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
-    }
-
+    } 
+    
+    // Güncellenmiş order'ı döndür
     return res.status(200).json(updatedOrder);
   } catch (error) {
     console.error("Error updating order:", error);
@@ -114,12 +140,13 @@ export const updateOrder = async (req, res) => {
   }
 };
 
+
 export const getOrderDetail = async (req, res) => {
   const { orderId } = req.params;
   try {
     // Siparişi bul
-    const order = await OrderModel.findById(orderId); 
-
+    const order = await OrderModel.findById(orderId);
+    
     // Eğer sipariş bulunmazsa
     if (!order) {
       return res.status(404).json({
@@ -130,29 +157,28 @@ export const getOrderDetail = async (req, res) => {
 
     // Raport bilgilerini getir
     const raport = await RaportModel.findById(order.raport_id); // Assuming raport_id is in the order model
-
-    if (raport) {
-      // Sipariş ile raport bilgilerini birleştir
-      const orderWithRaport = {
-        ...order.toObject(), // Mongoose belgesini düz bir nesneye çevir
-        raport_by: raport.raport_by,
-        raport_temp_no: raport.raport_temp_no,
-        raport_no: raport.raport_no,
-        raport_url: raport.raport_url,
-      };
-      
-      // Sipariş ve raport ile döndür
-      return res.status(200).json({
-        success: true,
-        order: orderWithRaport, // Siparişin rapor detaylarıyla birlikte
-      });
-    } else {
-      // Eğer raport bulunmazsa sadece siparişi döndür
-      return res.status(200).json({
-        success: true,
-        order: order.toObject(), // Sadece siparişi döndür
-      });
+    let tenant = null;
+    if (order.tenant && mongoose.Types.ObjectId.isValid(order.tenant)) {
+      tenant = await UserModel.findById(order.tenant); // Only fetch tenant if it's a valid ObjectId
     }
+    
+    // Sipariş ve raport bilgilerini birleştir
+    const orderWithDetails = {
+      ...order.toObject(), // Mongoose belgesini düz bir nesneye çevir
+      raport_by: raport ? raport.raport_by : null,
+      raport_temp_no: raport ? raport.raport_temp_no : null,
+      raport_no: raport ? raport.raport_no : null,
+      raport_url: raport ? raport.raport_url : null,
+      tenant: tenant ? `${tenant.surname} ${tenant.name}` : "Təyin edilməyib", // Tenant full name or "Təyin edilməyib"
+
+    };
+
+    // Sipariş ve detaylarla döndür
+    return res.status(200).json({
+      success: true,
+      order: orderWithDetails, // Siparişin rapor ve tenant detaylarıyla birlikte
+    });
+
   } catch (error) {
     console.error('Hata:', error.message);
     res.status(500).json({
@@ -161,3 +187,4 @@ export const getOrderDetail = async (req, res) => {
     });
   }
 };
+

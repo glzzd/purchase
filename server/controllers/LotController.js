@@ -1,5 +1,6 @@
 import ContractModel from "../models/ContractModel.js";
 import LotModel from "../models/LotModel.js";
+import OrderModel from "../models/OrderModel.js";
 import UserModel from "../models/UserModel.js";
 import jwt from "jsonwebtoken";
 
@@ -65,56 +66,95 @@ export const createLot = async (req, res) => {
 };
 
 export const getAllLots = async (req, res) => {
-    try {
-      const lots = await LotModel.find().sort({ createdAt: -1 });
-  
-      if (!lots || lots.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "No lots found.",
-        });
-      }
-  
-      res.status(200).json({
-        success: true,
-        lots,
-      });
-    } catch (error) {
-      console.error("Error fetching lots:", error);
-      res.status(500).json({
+  try {
+    // Tüm lotları en yeniye göre sırala
+    const lots = await LotModel.find().sort({ createdAt: -1 });
+
+    if (!lots || lots.length === 0) {
+      return res.status(404).json({
         success: false,
-        message: "An error occurred while fetching lots.",
+        message: "No lots found.",
       });
     }
-  };
 
-  export const updateLotDetails = async (req, res) => {
-    const {lotId} = req.params
-    const {lot_name,contract_no} = req.body
-    try {
-      const selectedLot = await LotModel.findById(lotId)
-      const selectedContract = await ContractModel.findOne({contract_no})
-
-      
-      selectedLot.lot_name=lot_name
-      selectedLot.contract_id=selectedContract._id
-      selectedLot.contract_no=selectedContract.contract_no
-      selectedLot.save()
-
-      res.status(200).json({
-        success: true,
-        selectedLot,
+    // Her bir lot için ilgili tenant bilgilerini alın
+    const lotsWithTenant = await Promise.all(
+      lots.map(async (lot) => {
+        const tenant = lot.tenant ? await UserModel.findById(lot.tenant) : null;
+        return {
+          ...lot.toObject(), // Lot bilgilerini obje olarak döndür
+          tenant, // İlgili tenant bilgisi
+        };
       })
-      
-    } catch (error) {
-      console.error("Error fetching lots:", error);
-      res.status(500).json({
+    );
+
+    res.status(200).json({
+      success: true,
+      lots: lotsWithTenant,
+    });
+  } catch (error) {
+    console.error("Error fetching lots:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching lots.",
+    });
+  }
+};
+
+export const updateLotDetails = async (req, res) => {
+  const { lotId } = req.params;
+  const { lot_name, contract_no, tenant } = req.body;
+
+  try {
+    const selectedLot = await LotModel.findById(lotId);
+    if (!selectedLot) {
+      return res.status(404).json({
         success: false,
-        message: "An error occurred while fetching lots.",
+        message: "Lot not found.",
       });
     }
+
+    const selectedContract = await ContractModel.findOne({ contract_no });
+    if (!selectedContract) {
+      return res.status(404).json({
+        success: false,
+        message: "Contract not found.",
+      });
+    }
+
+    // Lot detaylarını güncelle
+    selectedLot.lot_name = lot_name || selectedLot.lot_name;
+    selectedLot.contract_id = selectedContract._id;
+    selectedLot.contract_no = selectedContract.contract_no;
+    selectedLot.tenant = tenant || selectedLot.tenant;
     
+    await selectedLot.save();
+
+    // Lot'a bağlı tüm order'ları güncelle
+    await OrderModel.updateMany(
+      { lot_no: selectedLot.lot_no },
+      {
+        $set: {
+          contract_no: selectedLot.contract_no || "Təyin edilməyib",
+          tenant: selectedLot.tenant || "Təyin edilməyib",
+        },
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      selectedLot,
+    });
+  } catch (error) {
+    console.error("Error updating lot details:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while updating lot details.",
+    });
   }
+};
+
+
 
   export const getLotDetails = async (req, res) => {
     const { lotId } = req.params;
@@ -122,6 +162,8 @@ export const getAllLots = async (req, res) => {
     try {
 
       const lotDetails = await LotModel.findById(lotId);
+      console.log(lotDetails);
+      
       const createdBy = await UserModel.findById(lotDetails.created_by)
       
       if (!lotDetails) {

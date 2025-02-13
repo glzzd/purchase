@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Tooltip, Button, Select, Input, Modal, Drawer } from "antd";
 import { Download, Edit, Eye, Info } from "lucide-react";
+import moment from "moment-timezone";
+
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { toast } from "react-toastify";
@@ -61,6 +63,15 @@ const AllOrders = () => {
             { field: "lot_no", headerName: "Lot №", flex: 1 },
             { field: "contract_no", headerName: "Müqavilə №", flex: 1 },
             { field: "tenant", headerName: "İcarçı", flex: 1 },
+            {
+              field: "createdAt",
+              headerName: "Sifarişin yaranma tarixi",
+              flex: 1,
+              valueFormatter: (params) => {
+                // createdAt alanını Azerbaycan saatine göre formatla
+                return moment(params.value).tz("Asia/Baku").format("DD.MM.YYYY");
+              },
+            },
             {
               headerName: "Əməliyyatlar",
               field: "operations",
@@ -246,6 +257,7 @@ const AllOrders = () => {
     );
     if (response.ok) {
       const data = await response.json();
+      
       setViewedOrder(data);
     }
     setIsDrawerVisible(true);
@@ -288,39 +300,34 @@ const AllOrders = () => {
         </div>
       )}
 
-      <Modal
-        title="Müqavilə və Lot Nömrəsi Redaktəsi"
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        onOk={handleSave}
-      >
-        {selectedOrder && (
-          <>
-            <div className="mb-4">
-              <span className="block text-sm font-semibold">Lot Nömrəsi:</span>
-              <Select
-                value={selectedOrder.lot_no}
-                onChange={(value) => setSelectedOrder({ ...selectedOrder, lot_no: value })}
-                options={lots.map((lot) => ({ value: lot.lot_no, label: lot.lot_no }))}
-                style={{ width: "100%" }}
-              />
-            </div>
-            <div className="mb-4">
-              <span className="block text-sm font-semibold">Müqavilə Nömrəsi:</span>
+<Modal
+  title="Müqavilə və Lot Nömrəsi Redaktəsi"
+  open={isModalVisible}
+  onCancel={() => setIsModalVisible(false)}
+  onOk={handleSave}
+>
+  {selectedOrder && (
+    <>
+      <div className="mb-4">
+        <span className="block text-sm font-semibold">Lot Nömrəsi:</span>
+        <Select
+          showSearch
+          value={selectedOrder.lot_no}
+          onChange={(value) => setSelectedOrder({ ...selectedOrder, lot_no: value })}
+          options={lots.map((lot) => ({ value: lot.lot_no, label: lot.lot_no }))}
+          style={{ width: "100%" }}
+          filterOption={(input, option) => {
+            if (option?.label) {
+              return String(option.label).toLowerCase().includes(input.toLowerCase());
+            }
+            return false;
+          }}
+        />
+      </div>
+    </>
+  )}
+</Modal>
 
-              <Select
-                value={selectedOrder.contract_no}
-                onChange={(value) => setSelectedOrder({ ...selectedOrder, contract_no: value })}
-                options={contracts.map((contract) => ({
-                  value: contract.contract_no,
-                  label: contract.contract_no,
-                }))}
-                style={{ width: "100%" }}
-              />
-            </div>
-          </>
-        )}
-      </Modal>
 
       <Drawer
         title="Sifariş Detalları"
@@ -371,7 +378,7 @@ const AllOrders = () => {
               <strong>Müqavilə №:</strong> {viewedOrder.order.contract_no}
             </div>
             <div>
-              <strong>İcraçı №:</strong> {viewedOrder.order.tenant}
+              <strong>İcraçı:</strong> {viewedOrder.order.tenant}
             </div>
           </div>
         )}

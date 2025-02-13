@@ -14,7 +14,7 @@ const orderSchema = new mongoose.Schema({
     order_reason: {type: String},
     order_note: {type: String},
     order_status: {type: String, enum:['pending','approved','rejected','onProcess','done'], default:'pending'},
-    tenant:{type:String, default:null},
+    tenant: {type: mongoose.Schema.Types.ObjectId, ref: 'user'},
     lot_no:{type:String, default:null},
     contract_no:{type:String, default:null}
 },{ timestamps: true })

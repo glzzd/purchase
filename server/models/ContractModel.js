@@ -5,7 +5,7 @@ const contractSchema = new mongoose.Schema(
   {
     contract_name: { type: String },
     contract_no: { type: String, required: true },
-    contract_between: { type: String, required: true },
+    contract_between: { type: mongoose.Schema.Types.ObjectId, ref: "companies", required: true },
     created_by: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
   },
   { timestamps: true } // createdAt ve updatedAt otomatik olarak eklenir

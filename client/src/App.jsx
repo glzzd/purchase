@@ -12,6 +12,7 @@ import MakeOrder from './pages/OrdersPage/MakeOrderPage'
 import Raports from './pages/RaportsPage'
 import Lots from './pages/LotsPage'
 import Contracts from './pages/ContractsPage'
+import Companies from './pages/CompaniesPage'
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
         <Route path='/my-orders' element={<Raports/>} />
         <Route path='/lots' element={<Lots/>} />
         <Route path='/contracts' element={<Contracts/>} />
+        <Route path='/companies' element={<Companies/>} />
 
         </Route>
 
