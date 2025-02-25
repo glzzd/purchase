@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Tooltip, Button, Select, Input, Modal, Drawer } from "antd";
+import { Tooltip, Button, Select, Input, Modal, Drawer, Tag } from "antd";
 import { Download, Edit, Eye, Info } from "lucide-react";
 import moment from "moment-timezone";
+import { SetFilterModule } from "ag-grid-enterprise";
 
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { toast } from "react-toastify";
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllCommunityModule, SetFilterModule]);
 
 const AllOrders = () => {
   const [rowData, setRowData] = useState([]);
@@ -58,11 +59,35 @@ const AllOrders = () => {
             { field: "raport_no", headerName: "Raport №", flex: 1 },
             { field: "product", headerName: "Məhsul", flex: 1 },
             { field: "product_type", headerName: "Məhsulun növü", flex: 1 },
-            { field: "order_status", headerName: "Cari Status", flex: 1 },
-            { field: "order_by_fullname", headerName: "Sifarişçi", flex: 1 },
+            { field: "order_status", headerName: "Cari Status", flex: 1.5, filter:"agSetColumnFilter",floatingFilter: true,
+              cellRenderer: (params) => {
+                if (params.value === "pending") {
+                  return <Tag color="blue">Gözləmədə</Tag>;
+                } else if (params.value === "done") {
+                  return <Tag color="green">Tamamlandı</Tag>;
+                }else if (params.value === "rejected") {
+                  return <Tag color="red">Rədd edildi</Tag>;
+                }else if (params.value === "onProcess") {
+                  return <Tag color="gold">İcradadır</Tag>;
+                }
+                return <Tag color="default">Bilinmir</Tag>;
+              },
+              filterParams: {
+                values: ["onProcess", "rejected","pending","done"],
+                valueFormatter: (params) => {
+                  if (params.value === "pending") return "Gözləmədə";
+                  if (params.value === "done") return "Tamamlandı";
+                  if (params.value === "rejected") return "Rədd edildi";
+                  if (params.value === "onProcess") return "İcradadır";
+                  return "Bilinmir";
+                },
+              },
+            },
+            
+            { field: "order_by_fullname", headerName: "Sifarişçi", flex: 2 },
             { field: "lot_no", headerName: "Lot №", flex: 1 },
             { field: "contract_no", headerName: "Müqavilə №", flex: 1 },
-            { field: "tenant", headerName: "İcarçı", flex: 1 },
+            { field: "tenant", headerName: "İcarçı", flex: 2 },
             {
               field: "createdAt",
               headerName: "Sifarişin yaranma tarixi",

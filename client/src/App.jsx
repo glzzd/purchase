@@ -1,5 +1,5 @@
 import React from 'react'
-import {Routes, Route} from 'react-router'
+import {Routes, Route, Navigate} from 'react-router'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import OTPPage from './pages/OTPPage'
@@ -19,7 +19,8 @@ const App = () => {
     <div>
       <ToastContainer/>
       <Routes>
-        <Route path='/' element={<HomePage/>} />
+        {/* <Route path='/' element={<HomePage/>} /> */}
+        <Route path='/' element={<Navigate to="/login" replace/>}/>
         <Route path='/login' element={<LoginPage/>} />
         <Route path='/verify-otp' element={<OTPPage/>} />
         <Route path='/reset-password' element={<ResetPasswordPage/>} />

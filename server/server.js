@@ -11,6 +11,7 @@ import { raportRouter } from "./routes/RaportRoutes.js";
 import { lotRouter } from "./routes/LotRoutes.js";
 import { contractRouter } from "./routes/ContractRoutes.js";
 import { companyRouter } from "./routes/CompanyRoutes.js";
+import { rfqRouter } from "./routes/RFQRoutes.js";
 const app = express();
 const port = process.env.SERVER_PORT || 4000
 connectDB()
@@ -35,6 +36,7 @@ app.use("/api/raports", raportRouter)
 app.use("/api/lots", lotRouter)
 app.use("/api/contracts", contractRouter)
 app.use("/api/companies", companyRouter)
+app.use("/api/rfqs", rfqRouter)
 
 app.listen(port, () => console.log(
     "Server "+port+" nömrəli portda işləyir"

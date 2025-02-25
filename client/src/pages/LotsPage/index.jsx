@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Tooltip, Button, Input, Select, Modal, Drawer } from "antd";
-import { Download, Edit, Eye, Info, Plus } from "lucide-react";
+import { Download, DownloadCloud, DownloadIcon, Edit, Eye, File, Info, Plus } from "lucide-react";
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { toast } from "react-toastify";
@@ -40,7 +40,65 @@ const Lots = () => {
     setIsDrawerVisible(false);
     setViewedLot(null);
   };
+  const handleCreateRFQ = async (lot)=>{
 
+    
+    const response = await fetch(
+      `http://localhost:5001/api/rfqs/create`,
+      {
+        method: "Post",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(lot),
+      }
+    );
+    const result = await response.json();
+    if (result.success) {
+            window.location.reload();
+          } else {
+            toast.error(result.message || "Xəta baş verdi.");
+          }
+  }
+
+  const handleDownloadRFQ = async (rfq_id) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5001/api/rfqs/download/${rfq_id}`, // rfq_id'yi URL parametresi olarak ekledik
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error("Server error or invalid RFQ ID.");
+      }
+  
+      const result = await response.blob(); // Dosya verisini alıyoruz
+  
+      // Dosya indirilecek bir URL oluşturuyoruz
+      const url = window.URL.createObjectURL(result);
+  
+      // İndirme işlemini başlatıyoruz
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `RFQ_${rfq_id}.xlsx`; // Dosyanın adını belirliyoruz
+      document.body.appendChild(link);
+      link.click(); // Linki tıklatarak dosya indiriliyor
+  
+      // Temizlik işlemi
+      link.remove();
+      window.URL.revokeObjectURL(url);
+  
+      toast.success("RFQ faylı uğurla endirildi.");
+    } catch (error) {
+      toast.error(error.message || "Xəta baş verdi.");
+    }
+  };
+  
+  
   const handleView = async (lot) => {
     const response = await fetch(
       `http://localhost:5001/api/lots/get-all-lots/${lot._id}`,
@@ -104,9 +162,7 @@ const Lots = () => {
               flex: 1,
               valueGetter: (params) => {
                 const tenant = params.data.tenant;
-                return tenant
-                  ? `${tenant.surname} ${tenant.name}`
-                  : "Təyin edilməyib";
+                return tenant ? `${tenant.surname} ${tenant.name}` : "Təyin edilməyib";
               },
             },
             {
@@ -114,7 +170,6 @@ const Lots = () => {
               headerName: "Lotun yaranma tarixi",
               flex: 1,
               valueFormatter: (params) => {
-                // createdAt alanını Azerbaycan saatine göre formatla
                 return moment(params.value).tz("Asia/Baku").format("DD.MM.YYYY");
               },
             },
@@ -127,7 +182,7 @@ const Lots = () => {
               sortable: false,
               cellRenderer: (params) => {
                 return (
-                  <div className="">
+                  <div>
                     {params.data && params.data._id ? (
                       <div className="flex items-center">
                         <Button
@@ -149,6 +204,31 @@ const Lots = () => {
                         >
                           <Eye className="p-1" />
                         </Button>
+                        {params.data.rfq_id === null ? (
+                          <Button
+                            className="bg-[#e74a4a] m-2"
+                            size="small"
+                            onClick={() => handleCreateRFQ(params.data)}
+                            style={{
+                              backgroundColor: "#e74a4a",
+                              color: "white",
+                              padding: "10px",
+                            }}
+                          >
+                            RFQ yarat
+                          </Button>
+                        ) : <Button
+                        className="bg-[#54c039] m-2"
+                        size="small"
+                        onClick={() => handleDownloadRFQ(params.data.rfq_id)}
+                        style={{
+                          backgroundColor: "#54c039",
+                          color: "white",
+                          padding: "10px",
+                        }}
+                      >
+                        <DownloadCloud className="p-1"/>
+                      </Button>}
                       </div>
                     ) : (
                       <span>No Data</span>
@@ -158,6 +238,7 @@ const Lots = () => {
               },
             },
           ]);
+          
         } else {
           console.error("Lotlar yüklənərkən xəta baş verdi.");
         }

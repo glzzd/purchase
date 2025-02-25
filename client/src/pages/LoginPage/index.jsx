@@ -11,7 +11,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const {backendUrl, setisLoggedIn, getUserData} = useContext(AppContext)
-
+  
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     
@@ -21,6 +21,7 @@ const LoginPage = () => {
       const {data} = await axios.post(backendUrl + '/api/auth/login', {email,password});
       
       if(data.success){
+        
         toast.success(data.message)
         setLoading(false)
         setisLoggedIn(true)
@@ -36,6 +37,8 @@ const LoginPage = () => {
       toast.error(error.response?.data?.message );
     }
   }
+
+  
   
   return (
 
