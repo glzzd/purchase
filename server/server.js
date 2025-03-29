@@ -12,6 +12,9 @@ import { lotRouter } from "./routes/LotRoutes.js";
 import { contractRouter } from "./routes/ContractRoutes.js";
 import { companyRouter } from "./routes/CompanyRoutes.js";
 import { rfqRouter } from "./routes/RFQRoutes.js";
+import { orderRouter } from "./routes/OrderRoutes.js";
+import { parseExcelRouter } from "./routes/ImportExcel.js";
+
 const app = express();
 const port = process.env.SERVER_PORT || 4000
 connectDB()
@@ -33,10 +36,12 @@ app.use("/api/user", userRouter)
 app.use("/api/category", categoryRouter)
 app.use("/api/backet", backetRouter)
 app.use("/api/raports", raportRouter)
+app.use("/api/orders", orderRouter)
 app.use("/api/lots", lotRouter)
 app.use("/api/contracts", contractRouter)
 app.use("/api/companies", companyRouter)
 app.use("/api/rfqs", rfqRouter)
+app.use("/api/excel", parseExcelRouter);
 
 app.listen(port, () => console.log(
     "Server "+port+" nömrəli portda işləyir"

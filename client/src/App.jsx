@@ -13,6 +13,7 @@ import Raports from './pages/RaportsPage'
 import Lots from './pages/LotsPage'
 import Contracts from './pages/ContractsPage'
 import Companies from './pages/CompaniesPage'
+import Categories from './pages/CategoriesPage'
 
 const App = () => {
   return (
@@ -34,6 +35,7 @@ const App = () => {
         <Route path='/lots' element={<Lots/>} />
         <Route path='/contracts' element={<Contracts/>} />
         <Route path='/companies' element={<Companies/>} />
+        <Route path='/categories' element={<Categories/>} />
 
         </Route>
 

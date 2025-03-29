@@ -1,10 +1,11 @@
 import express from "express"
 // import { getAuthUserDetail } from "../middlewares/getUserDetail.js";
-import { getMainCategory, getProduct, getProductTypes, getSpecifications, getSubCategory } from "../controllers/CategoryController.js";
+import { getAllCategories, getMainCategory, getProduct, getProductTypes, getSpecifications, getSubCategory } from "../controllers/CategoryController.js";
 
 const categoryRouter = express.Router();
 
 
+categoryRouter.get("/all-categories", getAllCategories)
 categoryRouter.get("/main-categories", getMainCategory)
 categoryRouter.get("/sub-categories/:parentId", getSubCategory)
 categoryRouter.get("/product/:parentId", getProduct)

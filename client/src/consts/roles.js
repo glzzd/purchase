@@ -32,8 +32,9 @@ export const roles = [
         { name: "Bütün Sifarişlər", link: "/orders/all-order" },
         { name: "Yeni Sifariş Yarat", link: "/orders/make-order" },
         { name: "Lotlar", link: "/lots" },
-        { name: "Müqavilələr", link: "/contracts/" },
-        { name: "Şirkətlər", link: "/companies/" },
+        { name: "Müqavilələr", link: "/contracts" },
+        { name: "Şirkətlər", link: "/companies" },
+        { name: "Kateqoriyalar", link: "/categories" },
       ],
     },
     {

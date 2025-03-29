@@ -40,7 +40,7 @@ export const userLogin = async (req, res) => {
     }
 
     try {
-      await sendOTPCode(email);
+      // await sendOTPCode(email);
 
       const token = jwt.sign(
         { id: user._id, email: user.email },
@@ -48,16 +48,22 @@ export const userLogin = async (req, res) => {
         { expiresIn: "7d" }
       );
 
-      res.cookie("tempToken", token, {
+      // res.cookie("tempToken", token, {
+      //   httpOnly: true,
+      //   secure: process.env.SERVER_ENV === "production",
+      //   sameSite: process.env.SERVER_ENV === "production" ? "none" : "strict",
+      //   maxAge: 7 * 24 * 60 * 60 * 1000,
+      // });
+      
+      res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.SERVER_ENV === "production",
         sameSite: process.env.SERVER_ENV === "production" ? "none" : "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      
       return res.status(200).json({
         success: true,
-        message: "OTP kodu mail ünvanınıza göndərildi.",
+        message: "Uğurla daxil oldunuz.",
       });
     } catch (error) {
       return res.status(500).json({

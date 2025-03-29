@@ -26,7 +26,7 @@ const LoginPage = () => {
         setLoading(false)
         setisLoggedIn(true)
         getUserData()
-        navigate('/verify-otp')
+        navigate('/orders/make-order')
       }else{
         setLoading(false);
         toast.error(data.message)
@@ -65,7 +65,7 @@ const LoginPage = () => {
             onChange={e => setEmail(e.target.value)}
             placeholder="E-mail ünvanınız"
             required
-            className="px-4 py-2 rounded-lg bg-[#454444] text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 rounded-lg bg-[#454444] text-white focus:outline-none focus:ring-2 focus:ring-blue-500 "
           />
         </div>
         <div className="text-white flex flex-col gap-2">

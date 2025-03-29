@@ -56,7 +56,7 @@ const AllOrders = () => {
 
           setColDefs([
             { field: "raport_temp_no", headerName: "Müvəqqəti №", flex: 1 },
-            { field: "raport_no", headerName: "Raport №", flex: 1 },
+            { field: "raport_no_from_bc", headerName: "Raport №", flex: 1 },
             { field: "product", headerName: "Məhsul", flex: 1 },
             { field: "product_type", headerName: "Məhsulun növü", flex: 1 },
             { field: "order_status", headerName: "Cari Status", flex: 1.5, filter:"agSetColumnFilter",floatingFilter: true,
