@@ -122,7 +122,7 @@ const Categories = () => {
         />
       </div>
   <Modal
-  title="Yeni Şirkət"
+  title="Yeni Kateqorya və ya Məhsul"
   open={isNewCategoryModalVisible}
   onCancel={() => setIsNewCategoryModalVisible(false)}
   footer={[
@@ -135,10 +135,10 @@ const Categories = () => {
   ]}
 >
   <div className="space-y-4">
-    {/* Şirket Adı */}
+
     <div>
       <label htmlFor="company_name">
-        <span className="text-red-600">*</span>Şirkətin adı
+        <span className="text-red-600">*</span>Ana kateqoriya
       </label>
       <Input
         id="company_name"
@@ -152,7 +152,7 @@ const Categories = () => {
     {/* Şirket Hukuki Form */}
     <div>
       <label htmlFor="company_legal_form">
-        <span className="text-red-600">*</span>Şirkətin hüquqi forması
+        <span className="text-red-600">*</span>Alt kateqoriya
       </label>
       <Input
         id="company_legal_form"
@@ -166,7 +166,7 @@ const Categories = () => {
     {/* Şirket VÖEN */}
     <div>
       <label htmlFor="company_voen">
-        <span className="text-red-600">*</span>Şirkətin VÖEN-i
+        <span className="text-red-600">*</span>Məhsul
       </label>
       <Input
         id="company_voen"
@@ -178,7 +178,7 @@ const Categories = () => {
     </div>
 
     {/* Şirket CEO Adı */}
-    <div>
+    {/* <div>
       <label htmlFor="company_ceo_name">
         <span className="text-red-600">*</span>Səlahiyyətli şəxs
       </label>
@@ -189,7 +189,7 @@ const Categories = () => {
         // value={newCompany.company_ceo_name}
         // onChange={handleNewCompanyChange}
       />
-    </div>
+    </div> */}
 
     
       

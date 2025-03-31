@@ -6,7 +6,6 @@ const backetSchema = new mongoose.Schema({
     order_by_fullname: {type: String, required:true},
     order_for: {type: String, required:true},
     product: {type: String, required:true},
-    product_type: {type: String, required:true},
     product_specifications: [{type: mongoose.Schema.Types.Mixed}],
     order_count: {type: Number, required:true},
     order_reason: {type: String},

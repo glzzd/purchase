@@ -42,7 +42,7 @@ export const getAllCategories = async (req, res) => {
 
 export const getMainCategory = async (req, res) => {
     try {
-        const mainCategories = await CategoryModel.find({parentId:null})
+        const mainCategories = await MainCategoryModel.find()
 
         
         if (!mainCategories) {
@@ -58,7 +58,9 @@ export const getMainCategory = async (req, res) => {
 export const getSubCategory = async (req, res) => {
     try {
         const {parentId} = req.params
-        const subCategories = await CategoryModel.find({parentId:parentId})
+        const subCategories = await SubCategoryModel.find({mainCategoryId:parentId})
+     
+        
 
         if (!subCategories) {
             return res.status(404).json({ message: "Alt Kateqoriya tapılmadı" });
@@ -74,7 +76,7 @@ export const getProduct = async (req, res) => {
     try {
         const {parentId} = req.params
         
-        const childrenCategories = await CategoryModel.find({parentId:parentId, specifications: { $ne: [] },})
+        const childrenCategories = await ProductModel.find({subCategoryId:parentId})
 
         if (!childrenCategories) {
             return res.status(404).json({ message: "Məhsul tapılmadı" });
@@ -86,52 +88,20 @@ export const getProduct = async (req, res) => {
     }
 }
 
-export const getProductTypes = async (req, res) => {
-    try {
-        
-       
-        const { selectedProduct } = req.params;
-     
-        const productTypes = await SpecificationModel.find({categoryId:selectedProduct});  
-
-        if (!productTypes) {
-            return res.status(404).json({ message: 'Kategori bulunamadı' });
-        }
-
-        
-
-       
-
-       
-        
-
-        res.status(200).json(productTypes); 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message });
-    }
-};
-
 
 export const getSpecifications = async (req, res) => {
     try {
-        const { selectedProductType } = req.params; 
-
+        const { selectedProduct } = req.params; 
+        console.log("selectedProduct", selectedProduct);
+        
         
 
-        const categoryType = await SpecificationModel.findById(selectedProductType)
-
-            
+        const product = await ProductModel.findById(selectedProduct)
+        console.log(product);
         
     
-
-        const specifications = categoryType.values.map(spec => ({
-            id: spec.id, 
-            name: spec.value,
-            placeholder: spec.example 
-        }));
-
-        res.status(200).json(specifications); 
+            
+        res.status(200).json(product); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });

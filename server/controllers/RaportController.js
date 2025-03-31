@@ -35,7 +35,7 @@ export const generateRaport = async (req, res) => {
     const secretKey = process.env.JWT_SECRET;
     const decoded = jwt.verify(token, secretKey);
     const userId = decoded.id;
-    const userDetails = await UserModel.findById(userId); // Kullanıcı detaylarını al
+    const userDetails = await UserModel.findById(userId);
 
 
     
@@ -51,28 +51,32 @@ export const generateRaport = async (req, res) => {
       });
     }
     const orderDate = moment().tz("Asia/Baku").format("DD.MM.YYYY");
-
+    console.log(userBacket);
+    
     const orders = userBacket.map((item, index) => ({
       no: index + 1,
       product: item.product,
-      product_type: item.product_type,
       order_for: item.order_for,
       order_count: item.order_count,
-      head_office: userDetails.structure?.head_office || "N/A", 
+      head_office: userDetails.structure?.head_office || "N/A",
       office: userDetails.structure?.office || "N/A",
       department: userDetails.structure?.department || "",
       division: userDetails.structure?.division || "",
       rank: userDetails.rank || "N/A",
       position: userDetails.position || "N/A",
-      product_specifications: item.product_specifications.map((spec) => ({
-        specification: spec.name,
-        value: spec.value,
-      })),
+      product_specifications: Array.isArray(item.product_specifications) 
+        ? item.product_specifications.map((spec, i) => ({
+            specification: spec.specification,
+            value: spec?.value || "Bilinmiyor",
+          }))
+        : [],
       order_note: item.order_note || "",
       order_date: item.createdAt ? new Date(item.createdAt).toLocaleDateString('az-AZ') : "N/A",
     }));
     
-  
+    console.log("Updated orders:", JSON.stringify(orders, null, 2));
+    
+    
     doc.render({
       orders: orders,
       head_office: userDetails.structure?.head_office || "N/A",

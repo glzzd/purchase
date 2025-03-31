@@ -6,39 +6,59 @@ import RaportModel from "../models/RaportModel.js";
 import UserModel from "../models/UserModel.js";
 
 export const makeNewOrder = async (id, orders, raport) => {
-    try {
+  try {
+    if (!id) {
+      console.error("Error: User ID is missing.");
+      return;
+    }
 
-        
-      const user = await UserModel.findById(id);
-      const userBacket = await BacketModel.find({ order_by: id, is_raport_generated: false });
-  
-      if (!userBacket || userBacket.length === 0) {
-        return;
-      }
-  
-      const backetId = userBacket[0]._id;
-  
-      for (const item of orders) {
+
+    // Kullanıcıyı getir
+    const user = await UserModel.findById(id);
+    if (!user) {
+      console.error("Error: User not found.");
+      return;
+    }
+
+    // Kullanıcının səbətini kontrol et
+    const userBacket = await BacketModel.find({
+      order_by: id,
+      is_raport_generated: false
+    });
+
+    if (!userBacket || userBacket.length === 0) {
+      console.error("Error: No valid backet found.");
+      return;
+    }
+
+    const backetId = userBacket[0]._id;
+
+    for (const item of orders) {
+      try {
         const newOrder = new OrderModel({
           order_by: id,
           backet_id: backetId,
           order_by_fullname: `${user.surname} ${user.name} ${user.fathername}`,
           order_for: item.order_for,
           product: item.product,
-          product_type: item.product_type,
-          product_specifications: item.product_specifications,
+          product_specifications: item.product_specifications || [],
           order_count: item.order_count,
-          order_reason: item.order_reason,
-          order_note: item.order_note,
-          raport_id: raport._id
+          order_reason: item.order_reason || "", // Boş olmaması için varsayılan değer
+          order_note: item.order_note || "",
+          raport_id: raport?._id || null, // raport varsa ekle, yoksa null yap
         });
-  
+
         await newOrder.save();
+      } catch (orderError) {
+        console.error("Error creating order for product:", item.product, orderError.message);
       }
-    } catch (error) {
-      console.error("Error creating order:", error.message);
     }
-  };
+
+    console.log("All orders processed successfully.");
+  } catch (error) {
+    console.error("Error in makeNewOrder:", error.message);
+  }
+};
   
   export const allOrders = async (req, res) => {
     try {

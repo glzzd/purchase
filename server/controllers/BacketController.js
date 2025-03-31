@@ -4,19 +4,15 @@ import UserModel from "../models/UserModel.js";
 import CategoryModel from "../models/CategoryModel.js";
 import SpecificationModel from "../models/SpecificationModel.js";
 import OrderModel from "../models/OrderModel.js";
+import ProductModel from "../models/ProductModel.js";
 
 export const addProductToBacket = async (req, res) => {
-    
+  console.log("req.body", req.body);
+
   const { token } = req.cookies;
-  const {
-    order_for,
-    product,
-    product_type,
-    product_specifications,
-    order_count,
-    order_reason,
-    order_note,
-  } = req.body;
+  console.log("req.cookies", token);
+
+  const { order_for, product, product_specifications, order_count, order_note } = req.body;
 
   if (!token) {
     return res.status(401).json({
@@ -26,37 +22,62 @@ export const addProductToBacket = async (req, res) => {
   }
 
   try {
-      const secretKey = process.env.JWT_SECRET; 
-      const decoded = jwt.verify(token, secretKey); 
-      const userId = decoded.id; 
-      const user = await UserModel.findById(userId)
-      const productDetails = await CategoryModel.findById(product)
-      const productTypeDetails = await SpecificationModel.findById(product_type)
-      const productName = productDetails.name.toLowerCase()
-      const productTypeName = productTypeDetails.name.toLowerCase()
-        
-    
+    const secretKey = process.env.JWT_SECRET;
+    const decoded = jwt.verify(token, secretKey);
+    const userId = decoded.id;
+
     if (!userId) {
       return res.status(403).json({
         success: false,
         message: "İstifadəçi məlumatları alınmadı.",
       });
     }
-   
 
+    // Kullanıcıyı veritabanından çek
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "İstifadəçi tapılmadı.",
+      });
+    }
+
+    // Ürünü veritabanından çek
+    const productDetails = await ProductModel.findById(product);
+    if (!productDetails) {
+      return res.status(404).json({
+        success: false,
+        message: "Məhsul tapılmadı.",
+      });
+    }
+
+    const productName = productDetails.name;
+
+    // Eğer body'den spesifikasyon gelmişse onu kullan, yoksa veritabanından çek
+    const formattedSpecifications = product_specifications?.length 
+      ? product_specifications.map((spec, index) => ({
+          specification: spec?.name || `Spesifikasiya ${index + 1}`,
+          value: spec?.value || "Bilinmiyor",
+        }))
+      : (productDetails.specifications || []).map((spec, index) => ({
+          specification: spec?.name || `Spesifikasiya ${index + 1}`,
+          value: spec?.value || "Bilinmiyor",
+        }));
+
+    console.log("Final Product Specifications:", JSON.stringify(formattedSpecifications, null, 2));
+
+    // Yeni səbət elementi yarat
     const newBacket = new BacketModel({
-      order_by: userId, 
+      order_by: userId,
       order_by_fullname: `${user.surname} ${user.name} ${user.fathername}`,
       order_for,
       product: productName,
-      product_type: productTypeName,
-      product_specifications,
+      product_specifications: formattedSpecifications,
       order_count,
-      order_reason,
-      order_note
+      order_note,
     });
-    
 
+    // Veritabanına kaydet
     await newBacket.save();
 
     return res.status(200).json({
@@ -65,9 +86,11 @@ export const addProductToBacket = async (req, res) => {
       message: "Məhsul səbətə əlavə edildi.",
     });
   } catch (error) {
+    console.error("Səbətə əlavə edərkən xəta:", error);
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Daxili server xətası.",
+      error: error.message,
     });
   }
 };

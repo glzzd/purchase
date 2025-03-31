@@ -46,43 +46,24 @@ export const fetchSubCategories = async (selectedMainCategory) => {
     }
   };
 
-  export const fetchProductTypes = async (selectedProduct) => {
+
+  export const fetchSpecifications = async (selectedProduct) => {
     try {
+      console.log("selectedProductaa", selectedProduct);
       
-        
       const response = await fetch(
-        `${endpoints.host}${endpoints.productTypes}${selectedProduct}`
+        `${endpoints.host}${endpoints.specifications}${selectedProduct}`
       );
 
       
       const data = await response.json();
       
-      return data.map((productType) => ({
-        id: productType._id,
-        productTypeName: productType.name,
-      }));
-    } catch (error) {
-      console.error("Mehsul Tipi alınırken hata oluştu:", error);
-    }
-  };
-
-  export const fetchSpecifications = async (selectedProductType) => {
-    try {
-
-      const response = await fetch(
-        `${endpoints.host}${endpoints.specifications}${selectedProductType}`
-      );
-
       
-      const data = await response.json();
+      
 
 
       
-      return data.map((specification) => ({
-        id: specification.id,
-        specificationName: specification.name,
-        specificationExample: specification.placeholder,
-      }));
+      return data;
     } catch (error) {
       console.error("Mehsul Tipi alınırken hata oluştu:", error);
     }
