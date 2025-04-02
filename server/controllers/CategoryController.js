@@ -4,6 +4,50 @@ import CategoryModel from "../models/CategoryModel.js";
 import SubCategoryModel from "../models/SubCategoryModel.js";
 import ProductModel from "../models/ProductModel.js";
 
+export const addCategory = async (req, res) => {
+  try {
+    const { mainCategory, subCategory, product } = req.body;
+
+    if (!mainCategory || !subCategory || !product) {
+      return res.status(400).json({ success: false, message: "Bütün xanaları doldurun." });
+    }
+
+    // Ana kateqoriyanı tap və ya yarat
+    let category = await Category.findOne({ name: mainCategory });
+
+    if (!category) {
+      category = new Category({ name: mainCategory, subCategories: [] });
+    }
+
+    // Alt kateqoriyanı tap və ya yarat
+    let subCat = category.subCategories.find(sub => sub.name === subCategory);
+    if (!subCat) {
+      subCat = { name: subCategory, products: [] };
+      category.subCategories.push(subCat);
+    }
+
+    // Məhsulu əlavə et (əgər mövcud deyilsə)
+    if (!subCat.products.some(prod => prod.name === product)) {
+      subCat.products.push({ name: product });
+    }
+
+    // Verilənləri yadda saxla
+    await category.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Yeni kateqoriya əlavə edildi.",
+      category,
+    });
+  } catch (error) {
+    console.error("Kateqoriya əlavə edilərkən xəta:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Daxili server xətası.",
+      error: error.message,
+    });
+  }
+};
 
 export const getAllCategories = async (req, res) => {
     try {

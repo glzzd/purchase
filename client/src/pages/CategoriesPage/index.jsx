@@ -1,203 +1,251 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { Tooltip, Button, Input, Select, Modal, Drawer } from "antd";
-import { Download, Edit, Eye, Info, Plus } from "lucide-react";
-import moment from "moment-timezone";
-
+import React, { useEffect, useState } from "react";
+import { Tooltip, Button, Input, Select, Modal } from "antd";
+import { Plus, Info, X } from "lucide-react"; // Silme ikonu ekledik
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+const { Option } = Select;
 
 const Categories = () => {
   const [rowData, setRowData] = useState([]);
   const [colDefs, setColDefs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isNewCategoryModalVisible, setIsNewCategoryModalVisible] = useState(false);
-  const [newCategory, setNewCategory] = useState({
-    mainCategory: '',
-    subCategory: '',
-    product: '',
-    specification: '',
+  const [categories, setCategories] = useState([]);
+  const [filteredSubCategories, setFilteredSubCategories] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+
+  // Modal state-ləri
+  const [isMainCategoryModalVisible, setIsMainCategoryModalVisible] = useState(false);
+  const [isSubCategoryModalVisible, setIsSubCategoryModalVisible] = useState(false);
+  const [isProductModalVisible, setIsProductModalVisible] = useState(false);
+  const [isSpecificationModalVisible, setIsSpecificationModalVisible] = useState(false);
+
+  // Yeni məlumat state-ləri
+  const [newMainCategory, setNewMainCategory] = useState("");
+  const [newSubCategory, setNewSubCategory] = useState({ parent: "", name: "" });
+  const [newProduct, setNewProduct] = useState({ parentCategory: "", parentSubCategory: "", name: "" });
+  const [newSpecification, setNewSpecification] = useState({
+    parentCategory: "",
+    parentSubCategory: "",
+    parentProduct: "",
+    specifications: [{ name: "" }],
   });
 
-
-  const defaultColDef = useMemo(() => {
-    return {
-      filter: "agTextColumnFilter",
-      floatingFilter: true,
-      flex: 1,
-      resizable: false,
-    };
-  }, []);
-
-  
-  const text = (
-    <div className="space-y-2 text-white text-[12px]">
-      <p>Bu bölmədə satınalma üçün istifadə olunan bütün kateqoriyaları görə bilərsiniz</p>
-    </div>
-  );
   useEffect(() => {
-    const fetchAllCategories = async () => {
-      try {
-        const response = await fetch("http://localhost:5001/api/category/all-categories", {
-          method: "GET",
-          credentials: "include",
-        });
-  
-        if (response.ok) {
-          const data = await response.json();
-  
-         
-          const transformedData = data.flatMap(item => 
-            item.subCategories.flatMap(subCategory => 
-              subCategory.products.map(product => ({
-                mainCategory: item.name, 
-                subCategory: subCategory.name, 
-                product: product.name,
-              }))
-            )
-          );
-  
-          setRowData(transformedData); 
-  
-          setColDefs([
-            { field: "mainCategory", headerName: "Ana Kateqoriya", flex: 1 },
-            { field: "subCategory", headerName: "Alt Kateqoriya", flex: 1 },
-            { field: "product", headerName: "Məhsul", flex: 1 },
-          ]);
-        } else {
-          console.error("Kategoriler yüklenirken hata oluştu.");
-        }
-      } catch (error) {
-        console.error("API isteği hatası:", error);
-      } finally {
-        setLoading(false); 
-      }
-    };
-  
     fetchAllCategories();
   }, []);
 
+  const fetchAllCategories = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/api/category/all-categories", {
+        method: "GET",
+        credentials: "include",
+      });
 
-  const handleShowNewCategoryModal = () => {
-    setNewCategory({
-      mainCategory: '',
-      subCategory: '',
-      product: '',
-      specification: ''}); 
-    setIsNewCategoryModalVisible(true);
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+
+        const transformedData = data.flatMap((item) =>
+          item.subCategories.flatMap((subCategory) =>
+            subCategory.products.map((product) => ({
+              mainCategory: item.name,
+              subCategory: subCategory.name,
+              product: product.name,
+            }))
+          )
+        );
+
+        setRowData(transformedData);
+
+        setColDefs([
+          { field: "mainCategory", headerName: "Ana Kateqoriya", flex: 1 },
+          { field: "subCategory", headerName: "Alt Kateqoriya", flex: 1 },
+          { field: "product", headerName: "Məhsul", flex: 1 },
+        ]);
+      } else {
+        console.error("Kateqoriyalar yüklənərkən xəta.");
+      }
+    } catch (error) {
+      console.error("API istəyi xətası:", error);
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
+  useEffect(() => {
+    if (newProduct.parentCategory) {
+      const selectedCategory = categories.find(cat => cat._id === newProduct.parentCategory);
+      setFilteredSubCategories(selectedCategory ? selectedCategory.subCategories : []);
+      setFilteredProducts([]);
+    }
+  }, [newProduct.parentCategory]);
+
+  useEffect(() => {
+    if (newProduct.parentSubCategory && newProduct.parentCategory) {
+      const selectedCategory = categories.find(cat => cat._id === newProduct.parentCategory);
+      const selectedSubCategory = selectedCategory?.subCategories.find(sub => sub._id === newProduct.parentSubCategory);
+      setFilteredProducts(selectedSubCategory ? selectedSubCategory.products : []);
+    }
+  }, [newProduct.parentSubCategory]);
+
+  // Yeni spesifikasi ekleme fonksiyonu
+  const addNewSpecification = () => {
+    setNewSpecification((prev) => ({
+      ...prev,
+      specifications: [...prev.specifications, { name: "" }],
+    }));
+  };
+
+  // Spesifikasi adı değiştirme fonksiyonu
+  const handleSpecificationChange = (index, value) => {
+    const updatedSpecifications = [...newSpecification.specifications];
+    updatedSpecifications[index].name = value;
+    setNewSpecification({ ...newSpecification, specifications: updatedSpecifications });
+  };
+
+  // Spesifikasi silme fonksiyonu
+  const removeSpecification = (index) => {
+    const updatedSpecifications = newSpecification.specifications.filter((_, idx) => idx !== index);
+    setNewSpecification({ ...newSpecification, specifications: updatedSpecifications });
+  };
+
   return (
     <div className="bg-white rounded-md p-4 flex flex-col">
       <div className="flex justify-between">
         <div className="flex items-center gap-5">
           <span className="text-2xl font-bold">Kateqoriyaların İdarə Edilməsi</span>
-          <Tooltip
-            placement="right"
-            title={text}
-            arrow={true}
-            style={{ width: "400px" }}
-          >
+          <Tooltip title="Bu bölmədə satınalma üçün istifadə olunan bütün kateqoriyaları görə bilərsiniz">
             <Info className="text-blue-500" />
           </Tooltip>
         </div>
-        <div >
-          <Button variant="dashed" onClick={() => handleShowNewCategoryModal()}>
-            <Plus /> Yeni Kateqoriya
+        <div className="flex gap-2">
+          <Button onClick={() => setIsMainCategoryModalVisible(true)}>
+            <Plus /> Yeni Ana Kateqoriya
+          </Button>
+          <Button onClick={() => setIsSubCategoryModalVisible(true)}>
+            <Plus /> Yeni Alt Kateqoriya
+          </Button>
+          <Button onClick={() => setIsProductModalVisible(true)}>
+            <Plus /> Yeni Məhsul
+          </Button>
+          <Button onClick={() => setIsSpecificationModalVisible(true)}>
+            <Plus /> Yeni Spesifikasiya
           </Button>
         </div>
       </div>
+
       <div className="py-5 text-gray-200 flex">
         <hr />
       </div>
+
       <div style={{ height: 560 }}>
         <AgGridReact
           rowData={rowData}
           columnDefs={colDefs}
-          defaultColDef={defaultColDef}
-          pagination={true}
+          pagination
           paginationPageSize={10}
           paginationPageSizeSelector={[10, 25, 50]}
         />
       </div>
-  <Modal
-  title="Yeni Kateqorya və ya Məhsul"
-  open={isNewCategoryModalVisible}
-  onCancel={() => setIsNewCategoryModalVisible(false)}
-  footer={[
-    <Button key="cancel" onClick={() => setIsNewCategoryModalVisible(false)}>
-      Ləğv et
-    </Button>,
-    // <Button key="save" type="primary" onClick={handleSaveNewCompany}>
-    //   Təstiq et
-    // </Button>,
-  ]}
->
-  <div className="space-y-4">
 
-    <div>
-      <label htmlFor="company_name">
-        <span className="text-red-600">*</span>Ana kateqoriya
-      </label>
-      <Input
-        id="company_name"
-        name="company_name"
-        required
-        // value={newCompany.company_name}
-        // onChange={handleNewCompanyChange}
-      />
-    </div>
+      {/* Yeni Ana Kateqoriya Modal */}
+      <Modal title="Yeni Ana Kateqoriya" open={isMainCategoryModalVisible} onCancel={() => setIsMainCategoryModalVisible(false)}>
+        <Input placeholder="Ana kateqoriya adı" value={newMainCategory} onChange={(e) => setNewMainCategory(e.target.value)} />
+      </Modal>
 
-    {/* Şirket Hukuki Form */}
-    <div>
-      <label htmlFor="company_legal_form">
-        <span className="text-red-600">*</span>Alt kateqoriya
-      </label>
-      <Input
-        id="company_legal_form"
-        name="company_legal_form"
-        required
-        // value={newCompany.company_legal_form}
-        // onChange={handleNewCompanyChange}
-      />
-    </div>
+      {/* Yeni Alt Kateqoriya Modal */}
+      <Modal title="Yeni Alt Kateqoriya" open={isSubCategoryModalVisible} onCancel={() => setIsSubCategoryModalVisible(false)}>
+        <Select placeholder="Ana Kateqoriya seçin" style={{ width: "100%" }} onChange={(value) => setNewSubCategory({ ...newSubCategory, parent: value })}>
+          {categories.map((cat) => (
+            <Option key={cat._id} value={cat._id}>
+              {cat.name}
+            </Option>
+          ))}
+        </Select>
+        <Input placeholder="Alt kateqoriya adı" value={newSubCategory.name} onChange={(e) => setNewSubCategory({ ...newSubCategory, name: e.target.value })} />
+      </Modal>
 
-    {/* Şirket VÖEN */}
-    <div>
-      <label htmlFor="company_voen">
-        <span className="text-red-600">*</span>Məhsul
-      </label>
-      <Input
-        id="company_voen"
-        name="company_voen"
-        required
-        // value={newCompany.company_voen}
-        // onChange={handleNewCompanyChange}
-      />
-    </div>
+      {/* Yeni Məhsul Modal */}
+      <Modal title="Yeni Məhsul" open={isProductModalVisible} onCancel={() => setIsProductModalVisible(false)}>
+        <Select placeholder="Ana Kateqoriya seçin" style={{ width: "100%" }} onChange={(value) => setNewProduct({ ...newProduct, parentCategory: value, parentSubCategory: "" })}>
+          {categories.map((cat) => (
+            <Option key={cat._id} value={cat._id}>
+              {cat.name}
+            </Option>
+          ))}
+        </Select>
 
-    {/* Şirket CEO Adı */}
-    {/* <div>
-      <label htmlFor="company_ceo_name">
-        <span className="text-red-600">*</span>Səlahiyyətli şəxs
-      </label>
-      <Input
-        id="company_ceo_name"
-        name="company_ceo_name"
-        required
-        // value={newCompany.company_ceo_name}
-        // onChange={handleNewCompanyChange}
-      />
-    </div> */}
+        <Select placeholder="Alt Kateqoriya seçin" style={{ width: "100%" }} disabled={!newProduct.parentCategory} onChange={(value) => setNewProduct({ ...newProduct, parentSubCategory: value })}>
+          {filteredSubCategories.map((sub) => (
+            <Option key={sub._id} value={sub._id}>
+              {sub.name}
+            </Option>
+          ))}
+        </Select>
+        <Input placeholder="Məhsul adı" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} />
+      </Modal>
 
-    
-      
+      {/* Yeni Spesifikasiya Modal */}
 
-    <span className="text-red-600">(*) Doldurulması vacib xanalar</span>
-  </div>
-</Modal>
+      <Modal
+        title="Yeni Spesifikasiya"
+        open={isSpecificationModalVisible}
+        onCancel={() => setIsSpecificationModalVisible(false)}
+        >
+      <div className="flex flex-col gap-2">
+        <Select
+          placeholder="Ana Kateqoriya seçin"
+          style={{ width: "100%" }}
+          onChange={(value) => setNewSpecification({ ...newSpecification, parentCategory: value, parentSubCategory: "", parentProduct: "", specifications: [{ name: "" }] })}
+          >
+          {categories.map((cat) => (
+            <Option key={cat._id} value={cat._id}>
+              {cat.name}
+            </Option>
+          ))}
+        </Select>
 
+        <Select
+          placeholder="Alt Kateqoriya seçin"
+          style={{ width: "100%" }}
+          disabled={!newSpecification.parentCategory}
+          onChange={(value) => setNewSpecification({ ...newSpecification, parentSubCategory: value, parentProduct: "", specifications: [{ name: "" }] })}
+          >
+          {filteredSubCategories.map((sub) => (
+            <Option key={sub._id} value={sub._id}>
+              {sub.name}
+            </Option>
+          ))}
+        </Select>
+
+        <Select
+          placeholder="Məhsul seçin"
+          style={{ width: "100%" }}
+          disabled={!newSpecification.parentSubCategory}
+          onChange={(value) => setNewSpecification({ ...newSpecification, parentProduct: value, specifications: [{ name: "" }] })}
+          >
+          {filteredProducts.map((product) => (
+            <Option key={product._id} value={product._id}>
+              {product.name}
+            </Option>
+          ))}
+        </Select>
+
+        {newSpecification.specifications.map((spec, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <Input
+              placeholder={`Spesifikasiya ${index + 1}`}
+              value={spec.name}
+              onChange={(e) => handleSpecificationChange(index, e.target.value)}
+              />
+            <Button icon={<X />} onClick={() => removeSpecification(index)} />
+          </div>
+        ))}
+        <Button icon={<Plus />} onClick={addNewSpecification}>Əlavə et</Button>
+        </div>
+      </Modal>
     </div>
   );
 };
