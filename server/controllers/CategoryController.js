@@ -4,85 +4,153 @@ import CategoryModel from "../models/CategoryModel.js";
 import SubCategoryModel from "../models/SubCategoryModel.js";
 import ProductModel from "../models/ProductModel.js";
 
-export const addCategory = async (req, res) => {
+export const moveCategory = async (req, res) => {
+  const { moveType, oldId, newId } = req.body;
+  console.log("Gelen veri:", req.body);
+
   try {
-    const { mainCategory, subCategory, product } = req.body;
+    let updatedData;
 
-    if (!mainCategory || !subCategory || !product) {
-      return res.status(400).json({ success: false, message: "Bütün xanaları doldurun." });
+    if (moveType === "subCategory") {
+      updatedData = await SubCategoryModel.findByIdAndUpdate(
+        oldId,
+        { mainCategoryId: newId },
+        { new: true }
+      );
+    } else if (moveType === "product") {
+      updatedData = await ProductModel.findByIdAndUpdate(
+        oldId,
+        { subCategoryId: newId },
+        { new: true }
+      );
+    } else {
+      console.log("❌ Geçersiz taşıma türü:", moveType);
+      return res.status(400).json({ message: "Geçersiz taşıma türü" });
     }
 
-    // Ana kateqoriyanı tap və ya yarat
-    let category = await Category.findOne({ name: mainCategory });
-
-    if (!category) {
-      category = new Category({ name: mainCategory, subCategories: [] });
+    if (!updatedData) {
+      console.log("❌ Taşınacak öğe bulunamadı:", oldId);
+      return res.status(404).json({ message: "Taşınacak öğe bulunamadı" });
     }
 
-    // Alt kateqoriyanı tap və ya yarat
-    let subCat = category.subCategories.find(sub => sub.name === subCategory);
-    if (!subCat) {
-      subCat = { name: subCategory, products: [] };
-      category.subCategories.push(subCat);
-    }
-
-    // Məhsulu əlavə et (əgər mövcud deyilsə)
-    if (!subCat.products.some(prod => prod.name === product)) {
-      subCat.products.push({ name: product });
-    }
-
-    // Verilənləri yadda saxla
-    await category.save();
-
-    return res.status(201).json({
-      success: true,
-      message: "Yeni kateqoriya əlavə edildi.",
-      category,
+    console.log("✅ Taşıma başarılı:", updatedData);
+    return res.status(200).json({
+      message: `${moveType === "subCategory" ? "Alt kategori" : "Ürün"} başarıyla taşındı`,
+      data: updatedData,
     });
+
   } catch (error) {
-    console.error("Kateqoriya əlavə edilərkən xəta:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Daxili server xətası.",
-      error: error.message,
-    });
+    console.error("🔥 Sunucu hatası:", error);
+    return res.status(500).json({ message: "Sunucu hatası", error: error.message });
   }
 };
 
+
+    
+
+export const addSpecification = async (req, res) => {
+  const { productId, specifications } = req.body;
+  try {
+    // Ürünü buluyoruz
+    const product = await ProductModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Məhsul tapılmadı" });
+    }
+
+    // Spesifikasyonları ekliyoruz
+    product.specifications = [...product.specifications, ...specifications];
+
+    await product.save();
+
+    res.status(200).json({ message: "Spesifikasyonlar uğurla əlavə edildi!" });
+  } catch (error) {
+    console.error('Məhsul əlavə edilərkən xəta baş verdi:', error);
+
+    res.status(500).json({ message: "Xəta baş verdi", error });
+  }
+};
+
+export const createProduct = async (req, res) => {
+  try {
+    const { name, subCategoryId, mainCategoryId, specifications } = req.body;
+
+    if (!subCategoryId && !mainCategoryId) {
+      return res.status(400).json({ message: "Bir ana kateqoriya və ya alt kateqoriya seçilməlidir." });
+    }
+
+    const newProduct = new ProductModel({ name, subCategoryId: subCategoryId || null, mainCategoryId: mainCategoryId || null, specifications });
+    await newProduct.save();
+
+    res.status(201).json(newProduct);
+  } catch (error) {
+    console.error('Məhsul əlavə edilərkən xəta baş verdi:', error);
+
+    res.status(500).json({ message: "Məhsul əlavə edilərkən xəta baş verdi." });
+  }
+};
+
+
+export const createSubCategory = async (req, res) => {
+  try {
+    const { name, mainCategoryId } = req.body;
+    const newSubCategory = new SubCategoryModel({ name, mainCategoryId });
+    await newSubCategory.save();
+    res.status(201).json(newSubCategory);
+  } catch (error) {
+    res.status(500).json({ message: "Alt Kateqoriya əlavə edilərkən xəta baş verdi." });
+  }
+};
+
+export const createMainCategory = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const newCategory = new MainCategoryModel({ name });
+    console.log("newCategory", newCategory);
+    await newCategory.save();
+    res.status(201).json(newCategory);
+  } catch (error) {
+    res.status(500).json({ message: "Ana Kateqoriya əlavə edilərkən xəta baş verdi." });
+  }
+};
 export const getAllCategories = async (req, res) => {
-    try {
-      const mainCategories = await MainCategoryModel.find(); // Sadece MainCategoryleri bul
-  
-      if (!mainCategories || mainCategories.length === 0) {
-        return res.status(404).json({ message: 'Ana Kateqoriya tapılmadı' });
-      }
-  
-      // Her bir ana kategori için, ona ait subCategoryleri ve ilgili ürünleri getir
-      const categoriesWithSubCategories = await Promise.all(mainCategories.map(async (category) => {
+  try {
+    const mainCategories = await MainCategoryModel.find();
+    if (!mainCategories || mainCategories.length === 0) {
+      return res.status(404).json({ message: "Ana Kateqoriya tapılmadı" });
+    }
+
+
+    const categoriesWithSubCategories = await Promise.all(
+      mainCategories.map(async (category) => {
         const subCategories = await SubCategoryModel.find({ mainCategoryId: category._id });
-  
-        // Her bir SubCategory için, ona ait ürünleri getir
-        const subCategoriesWithProducts = await Promise.all(subCategories.map(async (subCategory) => {
-          const products = await ProductModel.find({ subCategoryId: subCategory._id })
-            .select('name specifications');  // İstediğiniz ürün bilgilerini seçin
-  
-          return {
-            ...subCategory.toObject(),
-            products,  // SubCategory ile ilişkili ürünleri ekle
-          };
-        }));
-  
+
+        const subCategoriesWithProducts = await Promise.all(
+          subCategories.map(async (subCategory) => {
+            const products = await ProductModel.find({ subCategoryId: subCategory._id }).select("name specifications");
+            return { ...subCategory.toObject(), products };
+          })
+        );
+
+        // ✅ Ana Kateqoriyaya bağlı olan ürünleri de getir
+        const mainCategoryProducts = await ProductModel.find({ mainCategoryId: category._id, subCategoryId: null }).select("name specifications");
+
         return {
           ...category.toObject(),
-          subCategories: subCategoriesWithProducts,  // Ana kategoriye subCategory'leri ekle
+          subCategories: subCategoriesWithProducts.length ? subCategoriesWithProducts : null, // Boş alt kategori yerine null döndürüyoruz
+          products: mainCategoryProducts.length ? mainCategoryProducts : null, // Ürün yoksa null döndürüyoruz
         };
-      }));
-  
-      res.status(200).json(categoriesWithSubCategories);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  };
+      })
+    );
+
+    res.status(200).json(categoriesWithSubCategories);
+  } catch (error) {
+    console.error("Xəta:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
 
 export const getMainCategory = async (req, res) => {
     try {

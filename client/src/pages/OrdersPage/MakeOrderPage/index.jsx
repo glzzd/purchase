@@ -129,23 +129,28 @@ const MakeOrder = () => {
       setSubCategories([]);
       return;
     }
-
+  
     const getSubCategories = async () => {
       const categories = await fetchSubCategories(selectedMainCategory);
       setSubCategories(categories);
+  
+      // Eğer alt kategori yoksa, ürünleri direkt olarak alabiliriz
+      if (categories.length === 0) {
+        const products = await fetchProducts(selectedMainCategory); // Ürünler ana kategoriye göre filtrelenir
+        setProducts(products);
+      }
     };
     getSubCategories();
   }, [selectedMainCategory]);
 
   useEffect(() => {
     if (!selectedSubCategory) {
-      setProducts([]);
+      setProducts([]); // Alt kategori yoksa, ürünleri sıfırla
       setSelectedProduct(""); // Ürünü sıfırla
       setSpecifications([]); // Spesifikasyonları sıfırla
       setSpecValues({}); // Spesifikasyon değerlerini sıfırla
       return;
     }
-  
     const getProducts = async () => {
       const products = await fetchProducts(selectedSubCategory);
       setProducts(products);
@@ -174,21 +179,22 @@ const MakeOrder = () => {
   
 
   const renderSpecifications = () =>
-    specifications.map((spec) => (
-      <div key={spec} className="mb-4">
-        <label htmlFor={`spec-${spec}`} className="block text-lg">
-          {spec}
+    specifications.map((spec, index) => (
+      <div key={index} className="mb-4">
+        <label htmlFor={`spec-${spec.name}`} className="block text-lg">
+          {spec.name} {/* Assuming `spec` is an object with a `name` property */}
         </label>
         <input
           type="text"
-          id={`spec-${spec}`}
-          placeholder={``}
-          value={specValues[spec] || ""}
-          onChange={(e) => handleSpecChange(spec, e.target.value)}
-          className="w-[200px] p-2 mt-2 border rounded-lg shadow-sm"
+          id={`spec-${spec.name}`}
+          placeholder={`${spec.name} daxil et`}
+          value={specValues[spec.name] || ""}
+          onChange={(e) => handleSpecChange(spec.name, e.target.value)}
+          className="w-full p-2 mt-2 border rounded-lg shadow-sm"
         />
       </div>
     ));
+  
 
   return (
     <div className="bg-white rounded-md p-4 flex flex-col">
@@ -238,27 +244,28 @@ const MakeOrder = () => {
 
       {/* Alt Kateqoriya */}
       {selectedMainCategory && (
-        <div className="mb-4">
-          <label htmlFor="subCategory" className="block text-lg font-medium">
-            Alt Kateqoriya:
-          </label>
-          <select
-            id="subCategory"
-            value={selectedSubCategory}
-            onChange={handleSubCategoryChange}
-            className="w-full p-2 mt-2 border rounded-lg shadow-sm"
-          >
-            <option value="" disabled>
-              Alt Kateqoriyanı Seçin
-            </option>
-            {subCategories.map((subCategory) => (
-              <option key={subCategory.id} value={subCategory.id}>
-                {subCategory.subCategoryName}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+  <div className="mb-4">
+    <label htmlFor="subCategory" className="block text-lg font-medium">
+      Alt Kateqoriya:
+    </label>
+    <select
+      id="subCategory"
+      value={selectedSubCategory}
+      onChange={handleSubCategoryChange}
+      disabled={subCategories.length === 0} // Eğer alt kategori yoksa, alt kategori seçimini devre dışı bırak
+      className="w-full p-2 mt-2 border rounded-lg shadow-sm"
+    >
+      <option value="" disabled>
+        Alt Kateqoriyanı Seçin
+      </option>
+      {subCategories.map((subCategory) => (
+        <option key={subCategory.id} value={subCategory.id}>
+          {subCategory.subCategoryName}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
 
       {/* Məhsul */}
       {selectedSubCategory && (
@@ -290,7 +297,7 @@ const MakeOrder = () => {
           <h2 className="text-xl font-semibold mb-2">Xüsusiyyətləri daxil edin</h2>
           <hr />
           <br />
-          <div className="flex flex-wrap justify-between gap-1">
+          <div className="flex flex-col w-full">
             {renderSpecifications()}
           </div>
         </div>

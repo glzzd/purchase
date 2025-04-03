@@ -24,7 +24,7 @@ export const parseAndSaveExcel = async (req, res) => {
       const mainCategoryName = row["Main Category"]?.trim();
       const subCategoryName = row["Sub Category"]?.trim();
       const productName = row["Product"]?.trim();
-      const specification = row["Specifications"]?.trim();
+      const specificationsRaw = row["Specifications"]?.trim();  // Raw specifications data
 
       if (!mainCategoryName || !subCategoryName || !productName) {
         console.warn("Eksik veri tespit edildi, geçiliyor:", row);
@@ -57,18 +57,30 @@ export const parseAndSaveExcel = async (req, res) => {
         subCategoryId: subCategory._id,
       });
       if (!product) {
+        // Parse specifications and format them as an array of objects with only the name field
+        const specifications = parseSpecifications(specificationsRaw);
+
+        console.log("Parsed specifications for", productName, specifications); // Log parsed specs
+
         product = new Product({
           name: productName,
           subCategoryId: subCategory._id,
-          specifications: specification ? [specification] : [],
+          mainCategoryId: mainCategory._id,
+          specifications: specifications,
         });
         await product.save();
       } else {
         // Var olan ürüne yeni specification ekle
-        if (specification && !product.specifications.includes(specification)) {
-          product.specifications.push(specification);
-          await product.save();
-        }
+        const newSpecifications = parseSpecifications(specificationsRaw);
+        console.log("Adding new specifications to existing product:", newSpecifications); // Log new specs
+
+        newSpecifications.forEach(spec => {
+          // Check if specification already exists
+          if (!product.specifications.some(existingSpec => existingSpec.name === spec.name)) {
+            product.specifications.push(spec);
+          }
+        });
+        await product.save();
       }
     }
 
@@ -77,4 +89,18 @@ export const parseAndSaveExcel = async (req, res) => {
     console.error("Hata:", error.message);
     res.status(500).json({ message: "Bir hata oluştu.", error: error.message });
   }
+};
+
+// Helper function to parse specifications into the required format
+const parseSpecifications = (specificationsRaw) => {
+  if (!specificationsRaw) return [];
+
+  // Split by comma, then trim spaces, and format as { name: value } object (value will be discarded)
+  const specsArray = specificationsRaw.split(",").map(spec => {
+    const [name] = spec.split(":").map(str => str.trim());
+    return name ? { name } : null;
+  }).filter(spec => spec !== null);
+
+  console.log("Parsed specifications:", specsArray); // Log parsed specifications
+  return specsArray;
 };
