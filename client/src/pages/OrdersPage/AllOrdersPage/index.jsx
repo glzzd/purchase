@@ -2,9 +2,9 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Tooltip, Button, Select, Input, Modal, Drawer, Tag } from "antd";
 import { Download, Edit, Eye, Info } from "lucide-react";
 import moment from "moment-timezone";
-import { SetFilterModule } from "ag-grid-enterprise";
 
 import { AgGridReact } from "ag-grid-react";
+import { SetFilterModule } from "ag-grid-enterprise";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { toast } from "react-toastify";
 
@@ -70,16 +70,16 @@ const AllOrders = () => {
                 }else if (params.value === "onProcess") {
                   return <Tag color="gold">İcradadır</Tag>;
                 }
-                return <Tag color="default">Bilinmir</Tag>;
+                return <Tag color="default">Dərkənar gözlənilir</Tag>;
               },
               filterParams: {
-                values: ["onProcess", "rejected","pending","done"],
+                values: ["onProcess", "rejected","pending","done",null],
                 valueFormatter: (params) => {
                   if (params.value === "pending") return "Gözləmədə";
                   if (params.value === "done") return "Tamamlandı";
                   if (params.value === "rejected") return "Rədd edildi";
                   if (params.value === "onProcess") return "İcradadır";
-                  return "Bilinmir";
+                  return "Dərkənar gözlənilir";
                 },
               },
             },
@@ -364,7 +364,7 @@ const AllOrders = () => {
           <div className="space-y-4">
             <div className="w-full bg-[#242424] text-center text-amber-400 p-5 rounded-2xl uppercase font-bold text-md">
               <span className="">
-                {viewedOrder.order.product} ({viewedOrder.order.product_type})
+                {viewedOrder.order.product}
               </span>
             </div>
             <div>
@@ -391,6 +391,9 @@ const AllOrders = () => {
               <strong>Raport №:</strong> {viewedOrder.order.raport_no}
             </div>
             <div>
+              <strong>Müqavilə №:</strong> {viewedOrder.order.contract_no}
+            </div>
+            <div>
               <strong>Sifarişçi:</strong> {viewedOrder.order.order_by_fullname}
             </div>
             <div>
@@ -398,9 +401,6 @@ const AllOrders = () => {
             </div>
             <div>
               <strong>Lot №:</strong> {viewedOrder.order.lot_no}
-            </div>
-            <div>
-              <strong>Müqavilə №:</strong> {viewedOrder.order.contract_no}
             </div>
             <div>
               <strong>İcraçı:</strong> {viewedOrder.order.tenant}

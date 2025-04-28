@@ -62,7 +62,7 @@ export const makeNewOrder = async (id, orders, raport) => {
   
   export const allOrders = async (req, res) => {
     try {
-      const orders = await OrderModel.find({ order_status: { $ne: null } }).sort({ createdAt: -1 });
+      const orders = await OrderModel.find().sort({ createdAt: -1 });
   
       if (orders.length === 0) {
         return res.status(404).json({
