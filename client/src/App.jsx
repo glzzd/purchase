@@ -14,6 +14,7 @@ import Lots from './pages/LotsPage'
 import Contracts from './pages/ContractsPage'
 import Companies from './pages/CompaniesPage'
 import Categories from './pages/CategoriesPage'
+import ExpenseItems from './pages/ExpenseItems'
 
 const App = () => {
   return (
@@ -33,6 +34,7 @@ const App = () => {
         <Route path='/orders/make-order' element={<MakeOrder/>} />
         <Route path='/my-orders' element={<Raports/>} />
         <Route path='/lots' element={<Lots/>} />
+        <Route path='/expense-items' element={<ExpenseItems/>} />
         <Route path='/contracts' element={<Contracts/>} />
         <Route path='/companies' element={<Companies/>} />
         <Route path='/categories' element={<Categories/>} />

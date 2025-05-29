@@ -466,6 +466,45 @@ const Lots = () => {
             ))}
         </Select>
       </div>
+ <div>
+        <label htmlFor="tenant">Xərc maddəsini seçin</label>
+        <Select
+          id="tenant"
+          showSearch
+          value={
+            selectedLot?.tenant
+              ? `${selectedLot.tenant.surname} ${selectedLot.tenant.name}`
+              : undefined
+          }
+          onChange={(value) => {
+            // Tenant seçimi yapıldığında hem selectedLot hem de selectedUser güncellenir
+            setSelectedLot({
+              ...selectedLot,
+              tenant: users.find((user) => user._id === value) || null, // Kullanıcıyı seçer
+            });
+            setSelectedUser(users.find((user) => user._id === value) || {});
+          }}
+          style={{ width: "100%" }}
+          filterOption={(input, option) => {
+            if (option && option.children) {
+              // `option.children` öğesini string olarak alıp arama yapıyoruz
+              const optionChildren = option.children.toString().toLowerCase();
+              return optionChildren.includes(input.toLowerCase());
+            }
+            return false;
+          }}
+        >
+          {users
+            .filter((user) => user.name) // Geçerli kullanıcıları filtreler
+            .map((user) => (
+              <Select.Option key={user._id} value={user._id}>
+                {user.surname} {user.name}
+              </Select.Option>
+            ))}
+        </Select>
+      </div>
+
+      
     </div>
   )}
 </Modal>

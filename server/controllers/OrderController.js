@@ -108,7 +108,7 @@ export const makeNewOrder = async (id, orders, raport) => {
   
 
 export const updateOrder = async (req, res) => {
-  const {temp_raport_no, new_status, new_raport_no}=req.body
+  const {temp_raport_no, new_status, new_raport_no, description, operation_by}=req.body
   
   try {
     const raport = await RaportModel.findOne({ raport_temp_no: temp_raport_no });
@@ -130,7 +130,7 @@ export const updateOrder = async (req, res) => {
   
     await OrderModel.updateMany(
       { raport_id: raport._id }, 
-      { $set: { order_status: new_status, raport_no_from_bc: new_raport_no } } 
+      { $set: { order_status: new_status, raport_no_from_bc: new_raport_no, description: description, operation_by: operation_by } } 
     );
   
     return res.status(200).json({
