@@ -9,7 +9,7 @@ const lotSchema = new mongoose.Schema({
     contract_no:  { type: String },
     created_by:  { type: mongoose.Schema.Types.ObjectId, ref: "user" },
     rfq_id:  { type: mongoose.Schema.Types.ObjectId, ref: "rfq", default:null },
-    expense_item:  { type: mongoose.Schema.Types.ObjectId, ref: "expenseitem", default:null }
+    expenseItem:  { type: mongoose.Schema.Types.ObjectId, ref: "expenseitems", default:null }
 },{ timestamps: true } )
 
 

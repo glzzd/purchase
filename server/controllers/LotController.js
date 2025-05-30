@@ -103,7 +103,7 @@ export const getAllLots = async (req, res) => {
 
 export const updateLotDetails = async (req, res) => {
   const { lotId } = req.params;
-  const { lot_name, contract_no, tenant } = req.body;
+  const { lot_name, contract_no, tenant, expenseItem } = req.body;
 
   try {
     const selectedLot = await LotModel.findById(lotId);
@@ -127,6 +127,7 @@ export const updateLotDetails = async (req, res) => {
     selectedLot.contract_id = selectedContract._id;
     selectedLot.contract_no = selectedContract.contract_no;
     selectedLot.tenant = tenant || selectedLot.tenant;
+    selectedLot.expenseItem = expenseItem || selectedLot.expenseItem;
     
     await selectedLot.save();
 

@@ -192,10 +192,10 @@ export const getContractDetails = async (req, res) => {
 
 
 
-export const getAllInternalExpenseItems = async (req, res) => {
+export const getAllExpenseItems = async (req, res) => {
     try {
       
-      const expenseItems = await ExpenseItemModel.find({ isInternal: true })
+      const expenseItems = await ExpenseItemModel.find()
       console.log(expenseItems);
       
   

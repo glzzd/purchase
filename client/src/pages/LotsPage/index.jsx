@@ -15,11 +15,13 @@ const Lots = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedLot, setSelectedLot] = useState(null);
   const [contracts, setContracts] = useState([]);
+  const [expenseItems, setExpenseItems] = useState([]);
   const [selectedContract, setSelectedContract] = useState({});
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState({});
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [viewedLot, setViewedLot] = useState(null);
+  const [selectedExpenseItem, setSelectedExpenseItem] = useState(null);
 
   const defaultColDef = useMemo(() => {
     return {
@@ -275,13 +277,45 @@ const Lots = () => {
     fetchContracts();
   }, []);
 
+  useEffect(() => {
+    const fetchExpenseItems = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5001/api/expense-items/get-expense-items",
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          setExpenseItems(data.expenseItems);
+        }
+      } catch (error) {
+        console.error("Xərc maddələri yüklənərkən xəta baş verdi:", error);
+      }
+    };
+
+    fetchExpenseItems();
+  }, []);
+  console.log("Expense Items:", expenseItems);
+  
+
   const handleEdit = (lot) => {
-    setSelectedLot(lot);
-    setSelectedContract({
-      contract_no: lot.contract_no || "",
-    });
-    setIsModalVisible(true);
-  };
+  setSelectedLot(lot);
+  setSelectedContract({
+    contract_no: lot.contract_no || "",
+  });
+
+  if (lot.tenant) {
+    setSelectedUser(lot.tenant); 
+  }
+
+  setIsModalVisible(true);
+};
+
 
   const handleNewLot = async () => {
     try {
@@ -300,7 +334,8 @@ const Lots = () => {
       console.error("Lot yaradarkən xəta baş verdi:", error);
     }
   };
-
+  console.log("selectedExpenseItem:", selectedExpenseItem);
+  
   const handleSave = async () => {
     try {
       if (!selectedLot) return;
@@ -313,8 +348,9 @@ const Lots = () => {
           },
           body: JSON.stringify({
             lot_name: selectedLot.lot_name,
-            contract_no: selectedContract.contract_no,
+            contract_no: selectedContract?.contract_no,
             tenant: selectedUser._id,
+            expenseItem: selectedExpenseItem._id,
           }),
         }
       );
@@ -458,7 +494,7 @@ const Lots = () => {
           }}
         >
           {users
-            .filter((user) => user.name) // Geçerli kullanıcıları filtreler
+            .filter((user) => user.name) 
             .map((user) => (
               <Select.Option key={user._id} value={user._id}>
                 {user.surname} {user.name}
@@ -467,41 +503,43 @@ const Lots = () => {
         </Select>
       </div>
  <div>
-        <label htmlFor="tenant">Xərc maddəsini seçin</label>
-        <Select
-          id="tenant"
-          showSearch
-          value={
-            selectedLot?.tenant
-              ? `${selectedLot.tenant.surname} ${selectedLot.tenant.name}`
-              : undefined
-          }
-          onChange={(value) => {
-            // Tenant seçimi yapıldığında hem selectedLot hem de selectedUser güncellenir
-            setSelectedLot({
-              ...selectedLot,
-              tenant: users.find((user) => user._id === value) || null, // Kullanıcıyı seçer
-            });
-            setSelectedUser(users.find((user) => user._id === value) || {});
-          }}
-          style={{ width: "100%" }}
-          filterOption={(input, option) => {
-            if (option && option.children) {
-              // `option.children` öğesini string olarak alıp arama yapıyoruz
-              const optionChildren = option.children.toString().toLowerCase();
-              return optionChildren.includes(input.toLowerCase());
-            }
-            return false;
-          }}
-        >
-          {users
-            .filter((user) => user.name) // Geçerli kullanıcıları filtreler
-            .map((user) => (
-              <Select.Option key={user._id} value={user._id}>
-                {user.surname} {user.name}
-              </Select.Option>
-            ))}
-        </Select>
+        <label htmlFor="expenseItems">Xərc maddəsini seçin</label>
+     <Select
+  id="expenseItems"
+  showSearch
+  value={selectedLot?.expenseItem || null}
+  onChange={(value) => {
+    const selectedItem = expenseItems.find((expenseItem) => expenseItem._id === value) || null;
+
+    console.log("Selected Expense Item:", selectedItem);
+
+    setSelectedLot((prevLot) => ({
+      ...prevLot,
+      expenseItem: selectedItem,
+    }));
+
+    setSelectedExpenseItem(selectedItem);
+  }}
+  style={{ width: "100%" }}
+  filterOption={(input, option) => {
+    if (option && option.children) {
+      const optionChildren = option.children.toString().toLowerCase();
+      return optionChildren.includes(input.toLowerCase());
+    }
+    return false;
+  }}
+>
+  {expenseItems
+    .filter((expenseItem) => expenseItem._id)
+    .map((expenseItem) => (
+      <Select.Option key={expenseItem._id} value={expenseItem._id}>
+        {expenseItem.itemCode} {expenseItem.isInternal ? "(Daxili)" : "(Xarici)"} - {expenseItem.description || "Təsvir yoxdur"}
+      </Select.Option>
+    ))}
+</Select>
+
+
+
       </div>
 
       

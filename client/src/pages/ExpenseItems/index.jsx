@@ -1,9 +1,9 @@
-import { Tooltip } from 'antd';
-import { Info } from 'lucide-react';
-import React from 'react'
-import { useEffect } from 'react';
-import { useMemo } from 'react';
-import { useState } from 'react';
+import { Button, Tag, Tooltip } from "antd";
+import { Download, Edit, Eye, Info } from "lucide-react";
+import React from "react";
+import { useEffect } from "react";
+import { useMemo } from "react";
+import { useState } from "react";
 
 import { AgGridReact } from "ag-grid-react";
 import { SetFilterModule } from "ag-grid-enterprise";
@@ -11,84 +11,68 @@ import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { toast } from "react-toastify";
 
 const ExpenseItems = () => {
-      const [loading, setLoading] = useState(true);
-      const [colDefs, setColDefs] = useState([]);
-      const [internalRowData, setInternalRowData] = useState([]);
-      const [externalRowData, setExternalRowData] = useState([]);
-    const text = (
+  const [loading, setLoading] = useState(true);
+  const [colDefs, setColDefs] = useState([]);
+  const [rowData, setRowData] = useState([]);
+  const [internalBudget, setInternalBudget] = useState(0);
+  const [externalBudget, setExternalBudget] = useState(0);
+
+  const text = (
     <div className="space-y-2 text-white text-[12px]">
       <p>
         Bu bölmədə Cənab Xidmət Rəisi tərəfindən təstiq edilmiş bütün satınalma
         tələblərini görə bilərsiniz
       </p>
     </div>
-    
   );
-useEffect(() => {
+  useEffect(() => {
     const fetchExpenseItems = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5001/api/expense-items/get-internal-expense-items",
+          "http://localhost:5001/api/expense-items/get-expense-items",
           {
             method: "GET",
             credentials: "include",
           }
         );
-        
-        const data = await response.json();
-        console.log(data.expenseItems);
-        
-        if (response.ok) {
-          const data = await response.json();
-          setInternalRowData(data);
 
+        const data = await response.json();
+
+        if (response.ok) {
+          setRowData(data.expenseItems);
+          const internal = data.expenseItems
+            .filter((item) => item.isInternal)
+            .reduce((sum, item) => sum + (item.amount || 0), 0);
+
+          const external = data.expenseItems
+            .filter((item) => !item.isInternal)
+            .reduce((sum, item) => sum + (item.amount || 0), 0);
+
+          setInternalBudget(internal);
+          setExternalBudget(external);
           setColDefs([
-            { field: "raport_temp_no", headerName: "Müvəqqəti №", flex: 1 },
-            { field: "raport_no_from_bc", headerName: "Raport №", flex: 1 },
-            { field: "product", headerName: "Məhsul", flex: 1 },
-            { field: "product_type", headerName: "Məhsulun növü", flex: 1 },
-            { field: "order_status", headerName: "Cari Status", flex: 1.5, filter:"agSetColumnFilter",floatingFilter: true,
-              cellRenderer: (params) => {
-                if (params.value === "pending") {
-                  return <Tag color="blue">Gözləmədə</Tag>;
-                } else if (params.value === "done") {
-                  return <Tag color="green">Tamamlandı</Tag>;
-                }else if (params.value === "rejected") {
-                  return <Tag color="red">Rədd edildi</Tag>;
-                }else if (params.value === "onProcess") {
-                  return <Tag color="gold">İcradadır</Tag>;
-                }
-                return <Tag color="default">Dərkənar gözlənilir</Tag>;
-              },
-              filterParams: {
-                values: ["onProcess", "rejected","pending","done",null],
-                valueFormatter: (params) => {
-                  if (params.value === "pending") return "Gözləmədə";
-                  if (params.value === "done") return "Tamamlandı";
-                  if (params.value === "rejected") return "Rədd edildi";
-                  if (params.value === "onProcess") return "İcradadır";
-                  return "Dərkənar gözlənilir";
-                },
-              },
-            },
-            
-            { field: "order_by_fullname", headerName: "Sifarişçi", flex: 2 },
-            { field: "lot_no", headerName: "Lot №", flex: 1 },
-            { field: "contract_no", headerName: "Müqavilə №", flex: 1 },
-            { field: "tenant", headerName: "İcarçı", flex: 2 },
+            { field: "itemCode", headerName: "Maddə kodu", flex: 1 },
+            { field: "description", headerName: "Açıqlama", flex: 1 },
+            { field: "amount", headerName: "Məbləğ", flex: 1 },
             {
-              field: "createdAt",
-              headerName: "Sifarişin yaranma tarixi",
+              field: "isInternal",
+              headerName: "Büdcə daxili / Büdcə xarici",
               flex: 1,
-              valueFormatter: (params) => {
-                // createdAt alanını Azerbaycan saatine göre formatla
-                return moment(params.value).tz("Asia/Baku").format("DD.MM.YYYY");
+              filter: "agSetColumnFilter",
+              floatingFilter: true,
+              cellRenderer: (params) => {
+                return params.value ? (
+                  <Tag color="blue">Büdcə daxili</Tag>
+                ) : (
+                  <Tag color="green">Büdcə xarici</Tag>
+                );
               },
             },
+
             {
               headerName: "Əməliyyatlar",
               field: "operations",
-              flex: 2,
+              flex: 1,
               floatingFilter: false,
               filter: false,
               sortable: false,
@@ -97,32 +81,19 @@ useEffect(() => {
                   <div className="flex items-center">
                     {params.data && params.data._id ? (
                       <div className="flex items-center">
-                        {params.data.order_status === "pending" && (
-                          <Button
-                            className="bg-[#242424] m-2"
-                            size="small"
-                            onClick={() => handleEdit(params.data)}
-                            style={{
-                              backgroundColor: "#242424",
-                              color: "white",
-                            }}
-                          >
-                            <Edit className="p-1" />
-                          </Button>
-                        )}
                         <Button
                           type="default"
                           size="small"
                           className=" m-2"
-                          onClick={() => handleDownload(params.data.raport_id)}
+                          // onClick={() => handleDownload(params.data.raport_id)}
                         >
-                          <Download className="p-1" />
+                          <Edit className="p-1" />
                         </Button>
                         <Button
                           type="default"
                           size="small"
                           className="m-2"
-                          onClick={() => handleView(params.data)}
+                          // onClick={() => handleView(params.data)}
                         >
                           <Eye className="p-1" />
                         </Button>
@@ -148,52 +119,74 @@ useEffect(() => {
     fetchExpenseItems();
   }, []);
   const defaultColDef = useMemo(() => {
-      return {
-        filter: "agTextColumnFilter",
-        floatingFilter: true,
-        flex: 1,
-        resizable: true,
-      };
-    }, []);
+    return {
+      filter: "agTextColumnFilter",
+      floatingFilter: true,
+      flex: 1,
+      resizable: true,
+    };
+  }, []);
   return (
-     <div className="bg-white rounded-md p-4 flex flex-col">
-      <div className="flex items-center gap-5">
-        <span className="text-2xl font-bold">Xərc Maddələri </span>
-        <Tooltip
-          placement="right"
-          title={text}
-          arrow={true}
-          style={{ width: "400px" }}
-        >
-          <Info className="text-blue-500" />
-        </Tooltip>
+    <div className="bg-white rounded-md p-4 flex flex-col">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <span className="text-2xl font-bold">Xərc Maddələri </span>
+          <Tooltip
+            placement="right"
+            title={text}
+            arrow={true}
+            style={{ width: "400px" }}
+          >
+            <Info className="text-blue-500" />
+          </Tooltip>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex gap-5">
+            <span className="font-bold">
+              Büdcə daxili balans:{" "}
+              <span className="font-light">{internalBudget} AZN</span>
+            </span>
+
+            <span className="font-bold">
+              Büdcə xarici balans:{" "}
+              <span className="font-light">{externalBudget} AZN</span>
+            </span>
+          </div>
+          <div><span className="font-bold">
+              Ümumi balans:{" "}
+              <span className="font-light">{externalBudget+internalBudget} AZN</span>
+            </span></div>
+        </div>
+        <Button className="mb-2">Yeni Xərc Maddəsi</Button>
       </div>
       <div className="py-5 text-gray-200 flex">
         <hr />
       </div>
-      <div className='flex'>
-        <div className='w-[50%]'>
-            <div></div>
-            <div>{loading ? (
-                    <div className="text-center text-gray-500">Sifarişlər yüklənir...</div>
-                  ) : (
-                    <div className="ag-theme-alpine" style={{ height: "565px" }}>
-                      <AgGridReact
-                        rowData={rowData}
-                        columnDefs={colDefs}
-                        defaultColDef={defaultColDef}
-                        pagination={true}
-                        paginationPageSize={10}
-                        paginationPageSizeSelector={[10, 25, 50]}
-                      />
-                    </div>
-                  )}</div>
+      <div className="flex">
+        <div className="w-full">
+          <div>{console.log(rowData)}</div>
+          <div>
+            {loading ? (
+              <div className="text-center text-gray-500">
+                Sifarişlər yüklənir...
+              </div>
+            ) : (
+              <div className="ag-theme-alpine" style={{ height: "565px" }}>
+                <AgGridReact
+                  rowData={rowData}
+                  columnDefs={colDefs}
+                  defaultColDef={defaultColDef}
+                  pagination={true}
+                  paginationPageSize={10}
+                  paginationPageSizeSelector={[10, 25, 50]}
+                />
+              </div>
+            )}
+          </div>
         </div>
-        <div className='w-[50%]'>Bx</div>
       </div>
+    </div>
+  );
+};
 
-      </div>
-  )
-}
-
-export default ExpenseItems
+export default ExpenseItems;

@@ -5,6 +5,14 @@ const ExpenseItemSchema = new mongoose.Schema({
     isInternal: { type: Boolean, required: true, default: true },
     description: { type: String, default: null },
     amount: {type: Number, required: true },
+    blockedBalance: { type: Number, default: 0 },
+    purchaseHistory: [
+        {
+            purchaseDate: { type: Date, default: Date.now },
+            amount: { type: Number, required: true },
+            description: { type: String, default: null }
+        }
+    ]
 });
 
 const ExpenseItemModel = mongoose.model("ExpenseItem", ExpenseItemSchema);
