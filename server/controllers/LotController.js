@@ -1,4 +1,5 @@
 import ContractModel from "../models/ContractModel.js";
+import ExpenseItemModel from "../models/ExpenseItems.js";
 import LotModel from "../models/LotModel.js";
 import OrderModel from "../models/OrderModel.js";
 import UserModel from "../models/UserModel.js";
@@ -81,12 +82,21 @@ export const getAllLots = async (req, res) => {
     const lotsWithTenant = await Promise.all(
       lots.map(async (lot) => {
         const tenant = lot.tenant ? await UserModel.findById(lot.tenant) : null;
+    
+        // Expense item bilgisi için gerekli detayları al
+        const expenseItem = lot.expenseItem
+          ? await ExpenseItemModel.findById(lot.expenseItem)
+          : null;
+    
         return {
-          ...lot.toObject(), // Lot bilgilerini obje olarak döndür
-          tenant, // İlgili tenant bilgisi
+          ...lot.toObject(),
+          tenant,
+          expenseItem: expenseItem ? expenseItem.itemCode : null, // Sadece itemCode döndür
         };
       })
     );
+    
+    
 
     res.status(200).json({
       success: true,
@@ -103,7 +113,7 @@ export const getAllLots = async (req, res) => {
 
 export const updateLotDetails = async (req, res) => {
   const { lotId } = req.params;
-  const { lot_name, contract_no, tenant, expenseItem } = req.body;
+  const { lot_name, contract_no, tenant, expenseItem, isInternal } = req.body;
 
   try {
     const selectedLot = await LotModel.findById(lotId);
@@ -122,16 +132,16 @@ export const updateLotDetails = async (req, res) => {
       });
     }
 
-    // Lot detaylarını güncelle
+  
     selectedLot.lot_name = lot_name || selectedLot.lot_name;
     selectedLot.contract_id = selectedContract._id;
     selectedLot.contract_no = selectedContract.contract_no;
     selectedLot.tenant = tenant || selectedLot.tenant;
     selectedLot.expenseItem = expenseItem || selectedLot.expenseItem;
+    selectedLot.isInternal = isInternal ;
     
     await selectedLot.save();
 
-    // Lot'a bağlı tüm order'ları güncelle
     await OrderModel.updateMany(
       { lot_no: selectedLot.lot_no },
       {

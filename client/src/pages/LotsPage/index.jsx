@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Tooltip, Button, Input, Select, Modal, Drawer } from "antd";
+import { Tooltip, Button, Input, Select, Modal, Drawer, Tag } from "antd";
 import { Download, DownloadCloud, DownloadIcon, Edit, Eye, File, Info, Plus } from "lucide-react";
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
@@ -67,7 +67,7 @@ const Lots = () => {
   const handleDownloadRFQ = async (rfq_id) => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/rfqs/download/${rfq_id}`, // rfq_id'yi URL parametresi olarak ekledik
+        `http://localhost:5001/api/rfqs/download/${rfq_id}`, 
         {
           method: "GET",
           credentials: "include",
@@ -116,6 +116,8 @@ const Lots = () => {
     }
     setIsDrawerVisible(true);
   };
+  console.log("Viewed Lot:", viewedLot);
+  
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -157,6 +159,21 @@ const Lots = () => {
           setColDefs([
             { field: "lot_no", headerName: "Lot №-si", flex: 1 },
             { field: "lot_name", headerName: "Lotun adı", flex: 1 },
+            { field: "expenseItem", headerName: "Xərc maddəsi", flex: 1 },
+            {
+                          field: "isInternal",
+                          headerName: "Büdcə daxili / Büdcə xarici",
+                          flex: 1.5,
+                          filter: "agSetColumnFilter",
+                          floatingFilter: true,
+                          cellRenderer: (params) => {
+                            return params.value ? (
+                              <Tag color="blue">Büdcə daxili</Tag>
+                            ) : (
+                              <Tag color="green">Büdcə xarici</Tag>
+                            );
+                          },
+                        },
             { field: "contract_no", headerName: "Əlaqəli müqavilə", flex: 1 },
             {
               field: "tenant",
@@ -169,7 +186,7 @@ const Lots = () => {
             },
             {
               field: "createdAt",
-              headerName: "Lotun yaranma tarixi",
+              headerName: "Lotun tarixi",
               flex: 1,
               valueFormatter: (params) => {
                 return moment(params.value).tz("Asia/Baku").format("DD.MM.YYYY");
@@ -178,7 +195,7 @@ const Lots = () => {
             {
               headerName: "Əməliyyatlar",
               field: "operations",
-              flex: 1,
+              flex: 1.5,
               floatingFilter: false,
               filter: false,
               sortable: false,
@@ -351,6 +368,7 @@ const Lots = () => {
             contract_no: selectedContract?.contract_no,
             tenant: selectedUser._id,
             expenseItem: selectedExpenseItem._id,
+            isInternal: selectedExpenseItem.isInternal,
           }),
         }
       );
@@ -476,10 +494,9 @@ const Lots = () => {
               : undefined
           }
           onChange={(value) => {
-            // Tenant seçimi yapıldığında hem selectedLot hem de selectedUser güncellenir
             setSelectedLot({
               ...selectedLot,
-              tenant: users.find((user) => user._id === value) || null, // Kullanıcıyı seçer
+              tenant: users.find((user) => user._id === value) || null,
             });
             setSelectedUser(users.find((user) => user._id === value) || {});
           }}
@@ -504,23 +521,25 @@ const Lots = () => {
       </div>
  <div>
         <label htmlFor="expenseItems">Xərc maddəsini seçin</label>
-     <Select
+        <Select
   id="expenseItems"
   showSearch
-  value={selectedLot?.expenseItem || null}
+  value={selectedLot?.expenseItem || selectedLot?.expenseItem?.itemCode} 
   onChange={(value) => {
     const selectedItem = expenseItems.find((expenseItem) => expenseItem._id === value) || null;
+    
 
     console.log("Selected Expense Item:", selectedItem);
 
     setSelectedLot((prevLot) => ({
       ...prevLot,
-      expenseItem: selectedItem,
+      expenseItem: selectedItem.itemCode, // Seçili öğeyi kaydet
     }));
 
     setSelectedExpenseItem(selectedItem);
   }}
   style={{ width: "100%" }}
+  optionLabelProp="label" // Seçili öğede gösterilecek etiket
   filterOption={(input, option) => {
     if (option && option.children) {
       const optionChildren = option.children.toString().toLowerCase();
@@ -532,11 +551,17 @@ const Lots = () => {
   {expenseItems
     .filter((expenseItem) => expenseItem._id)
     .map((expenseItem) => (
-      <Select.Option key={expenseItem._id} value={expenseItem._id}>
+      <Select.Option 
+        key={expenseItem._id} 
+        value={expenseItem._id} 
+        label={`${expenseItem.itemCode} ${expenseItem.isInternal ? "(Daxili)" : "(Xarici)"}`} // Seçili öğede gösterilecek değer
+      >
         {expenseItem.itemCode} {expenseItem.isInternal ? "(Daxili)" : "(Xarici)"} - {expenseItem.description || "Təsvir yoxdur"}
       </Select.Option>
     ))}
 </Select>
+
+
 
 
 
