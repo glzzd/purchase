@@ -165,8 +165,14 @@ const Lots = () => {
                           headerName: "Büdcə daxili / Büdcə xarici",
                           flex: 1.5,
                           filter: "agSetColumnFilter",
+                          
                           floatingFilter: true,
                           cellRenderer: (params) => {
+                            console.log("Expense Item:", params.data.expenseItem);
+                            if (!params.data.expenseItem) {
+                              return <Tag color="red">Xərc maddəsi təyin edilməyib</Tag>;
+                            }
+                            
                             return params.value ? (
                               <Tag color="blue">Büdcə daxili</Tag>
                             ) : (
@@ -174,6 +180,7 @@ const Lots = () => {
                             );
                           },
                         },
+            { field: "estimatedAmount", headerName: "Təxmini məbləğ", flex: 1 },
             { field: "contract_no", headerName: "Əlaqəli müqavilə", flex: 1 },
             {
               field: "tenant",
@@ -354,45 +361,65 @@ const Lots = () => {
   console.log("selectedExpenseItem:", selectedExpenseItem);
   
   const handleSave = async () => {
-    try {
-      if (!selectedLot) return;
-      const response = await fetch(
-        `http://localhost:5001/api/lots/update/${selectedLot._id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            lot_name: selectedLot.lot_name,
-            contract_no: selectedContract?.contract_no,
-            tenant: selectedUser._id,
-            expenseItem: selectedExpenseItem._id,
-            isInternal: selectedExpenseItem.isInternal,
-          }),
-        }
-      );
+  try {
+    if (!selectedLot) return;
 
-      if (response.ok) {
-        const updatedLot = await response.json();
+    const originalLot = rowData.find((lot) => lot._id === selectedLot._id);
+    if (!originalLot) return;
 
-        setRowData((prevRowData) =>
-          prevRowData.map((lot) =>
-            lot._id === updatedLot._id ? updatedLot : lot
-          )
-        );
+    const updatedFields = {};
 
-        setIsModalVisible(false);
-        window.location.reload();
-        setSelectedLot(null);
-        setSelectedContract({});
-      } else {
-        console.error("Məlumatların yenilənməsi zamanı xəta baş verdi.");
-      }
-    } catch (error) {
-      console.error("Məlumatların yenilənməsi zamanı xəta baş verdi:", error);
+    if (selectedLot.lot_name !== originalLot.lot_name)
+      updatedFields.lot_name = selectedLot.lot_name;
+
+    if (selectedContract?.contract_no && selectedContract.contract_no !== originalLot.contract_no)
+      updatedFields.contract_no = selectedContract.contract_no;
+
+    if (selectedUser?._id && selectedUser._id !== originalLot.tenant)
+      updatedFields.tenant = selectedUser._id;
+
+    if (selectedExpenseItem?._id && selectedExpenseItem._id !== originalLot.expenseItem)
+      updatedFields.expenseItem = selectedExpenseItem._id;
+
+    if (
+      selectedExpenseItem?.isInternal !== undefined &&
+      selectedExpenseItem.isInternal !== originalLot.isInternal
+    )
+      updatedFields.isInternal = selectedExpenseItem.isInternal;
+
+    if (selectedLot.estimatedAmount !== originalLot.estimatedAmount)
+      updatedFields.estimatedAmount = selectedLot.estimatedAmount;
+
+    if (Object.keys(updatedFields).length === 0) {
+      console.log("Heç bir dəyişiklik yoxdur.");
+      return;
     }
-  };
+
+    const response = await fetch(`http://localhost:5001/api/lots/update/${selectedLot._id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedFields),
+    });
+
+    if (response.ok) {
+      const updatedLot = await response.json();
+      setRowData((prevRowData) =>
+        prevRowData.map((lot) => (lot._id === updatedLot.selectedLot._id ? updatedLot.selectedLot : lot))
+      );
+      setIsModalVisible(false);
+      setSelectedLot(null);
+      setSelectedContract({});
+      window.location.reload();
+    } else {
+      console.error("Məlumatların yenilənməsi zamanı xəta baş verdi.");
+    }
+  } catch (error) {
+    console.error("Məlumatların yenilənməsi zamanı xəta baş verdi:", error);
+  }
+};
+
 
   return (
     <div className="bg-white rounded-md p-4 flex flex-col">
@@ -529,8 +556,6 @@ const Lots = () => {
     const selectedItem = expenseItems.find((expenseItem) => expenseItem._id === value) || null;
     
 
-    console.log("Selected Expense Item:", selectedItem);
-
     setSelectedLot((prevLot) => ({
       ...prevLot,
       expenseItem: selectedItem.itemCode, // Seçili öğeyi kaydet
@@ -565,6 +590,21 @@ const Lots = () => {
 
 
 
+      </div>
+
+       <div>
+        <label htmlFor="estimatedAmount">Lotun təxmini məbləği</label>
+        <Input
+          id="estimatedAmount"
+          type="number"
+          value={selectedLot.estimatedAmount}
+          onChange={(e) =>
+            setSelectedLot({
+              ...selectedLot,
+              estimatedAmount: e.target.value,
+            })
+          }
+        />
       </div>
 
       

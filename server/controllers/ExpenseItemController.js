@@ -221,16 +221,21 @@ export const getAllExpenseItems = async (req, res) => {
 };
   
 
-export const addInternalExpenseItem = async (req, res) => {
+export const addExpenseItem = async (req, res) => {
   try {
-    const { itemCode, isInternal=true, description, amount } = req.body;
+    let { itemCode, isInternal, description, amount } = req.body;
 
-    
-    if (!itemCode || amount === undefined) {
+    // Zorunlu sahələrin yoxlanması
+    if (!itemCode || amount === undefined || isNaN(amount)) {
       return res.status(400).json({
         success: false,
-        message: "Zəhmət olmasa Maddə kodunu və ayrılmış məbləği daxil edin.",
+        message: "Zəhmət olmasa Maddə kodunu və düzgün məbləği daxil edin.",
       });
+    }
+
+    // isInternal sahəsinin default olaraq true təyin edilməsi (əgər gəlməyibsə)
+    if (isInternal === undefined || isInternal === null) {
+      isInternal = true;
     }
 
     const newExpenseItem = new ExpenseItemModel({
@@ -242,16 +247,39 @@ export const addInternalExpenseItem = async (req, res) => {
 
     const savedExpenseItem = await newExpenseItem.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Xərc maddəsi uğurla əlavə edildi.",
       expenseItem: savedExpenseItem,
     });
   } catch (error) {
     console.error("Xərc maddəsi əlavə edilərkən xəta baş verdi:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Xərc maddəsi əlavə edilərkən xəta baş verdi.",
     });
+  }
+};
+
+
+export const updateExpenseItem = async (req, res) => {
+  const { id } = req.params;
+  const { itemCode, description, amount, isInternal } = req.body;
+
+  try {
+    const updatedItem = await ExpenseItemModel.findByIdAndUpdate(
+      id,
+      { itemCode, description, amount, isInternal },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedItem) {
+      return res.status(404).json({ message: "Xərc maddəsi tapılmadı" });
+    }
+
+    return res.status(200).json({ expenseItem: updatedItem });
+  } catch (error) {
+    console.error("Xərc maddəsi yenilənə bilmədi:", error);
+    res.status(500).json({ message: "Server xətası baş verdi" });
   }
 };

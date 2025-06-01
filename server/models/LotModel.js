@@ -11,6 +11,7 @@ const lotSchema = new mongoose.Schema({
     rfq_id:  { type: mongoose.Schema.Types.ObjectId, ref: "rfq", default:null },
     expenseItem:  { type: mongoose.Schema.Types.ObjectId, ref: "expenseitems", default:null },
 
+    estimatedAmount: { type: Number, default: 0 },
     isInternal: { type: Boolean, default: false },
 },{ timestamps: true } )
 

@@ -9,6 +9,9 @@ import { AgGridReact } from "ag-grid-react";
 import { SetFilterModule } from "ag-grid-enterprise";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { toast } from "react-toastify";
+import AddExpenseItemModal from "./AddExpenseItemModal";
+import ViewExpenseItemDrawer from "./ViewExpenseItemDrawer";
+import EditExpenseItemModal from "./EditExpenseItemModal";
 
 const ExpenseItems = () => {
   const [loading, setLoading] = useState(true);
@@ -16,6 +19,10 @@ const ExpenseItems = () => {
   const [rowData, setRowData] = useState([]);
   const [internalBudget, setInternalBudget] = useState(0);
   const [externalBudget, setExternalBudget] = useState(0);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const text = (
     <div className="space-y-2 text-white text-[12px]">
@@ -85,7 +92,7 @@ const ExpenseItems = () => {
                           type="default"
                           size="small"
                           className=" m-2"
-                          // onClick={() => handleDownload(params.data.raport_id)}
+                          onClick={() => handleEdit(params.data)}
                         >
                           <Edit className="p-1" />
                         </Button>
@@ -93,7 +100,7 @@ const ExpenseItems = () => {
                           type="default"
                           size="small"
                           className="m-2"
-                          // onClick={() => handleView(params.data)}
+                          onClick={() => handleView(params.data)}
                         >
                           <Eye className="p-1" />
                         </Button>
@@ -126,6 +133,75 @@ const ExpenseItems = () => {
       resizable: true,
     };
   }, []);
+
+  const handleAddExpenseItem = async (values) => {
+    try {
+      const response = await fetch(
+        "http://localhost:5001/api/expense-items/add-expense-item",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(values),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Xərc maddəsi uğurla əlavə edildi");
+        setIsAddModalOpen(false);
+        const updated = await response.json();
+        setRowData((prev) => [...prev, updated.expenseItem]);
+      } else {
+        toast.error("Əlavə edilərkən xəta baş verdi");
+      }
+    } catch (error) {
+      console.error("Xəta:", error);
+      toast.error("Server xətası");
+    }
+  };
+
+  const handleView = (item) => {
+    setSelectedItem(item);
+    setIsViewDrawerOpen(true);
+  };
+
+  const handleEdit = (item) => {
+  setSelectedItem(item);
+  setIsEditModalOpen(true); 
+};
+
+  const handleUpdateExpenseItem = async (updatedValues) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5001/api/expense-items/update-expense-item/${selectedItem._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(updatedValues),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Xərc maddəsi uğurla yeniləndi");
+        const updatedItem = await response.json();
+        setRowData((prev) =>
+          prev.map((item) =>
+            item._id === updatedItem.expenseItem._id
+              ? updatedItem.expenseItem
+              : item
+          )
+        );
+        setIsEditModalOpen(false);
+      } else {
+        toast.error("Yenilənmə zamanı xəta baş verdi");
+      }
+    } catch (err) {
+      console.error("Xəta:", err);
+      toast.error("Server xətası");
+    }
+  };
+
   return (
     <div className="bg-white rounded-md p-4 flex flex-col">
       <div className="flex items-center justify-between">
@@ -152,12 +228,18 @@ const ExpenseItems = () => {
               <span className="font-light">{externalBudget} AZN</span>
             </span>
           </div>
-          <div><span className="font-bold">
+          <div>
+            <span className="font-bold">
               Ümumi balans:{" "}
-              <span className="font-light">{externalBudget+internalBudget} AZN</span>
-            </span></div>
+              <span className="font-light">
+                {externalBudget + internalBudget} AZN
+              </span>
+            </span>
+          </div>
         </div>
-        <Button className="mb-2">Yeni Xərc Maddəsi</Button>
+        <Button className="mb-2" onClick={() => setIsAddModalOpen(true)}>
+          Yeni Xərc Maddəsi
+        </Button>
       </div>
       <div className="py-5 text-gray-200 flex">
         <hr />
@@ -185,6 +267,25 @@ const ExpenseItems = () => {
           </div>
         </div>
       </div>
+      <AddExpenseItemModal
+        visible={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddExpenseItem}
+      />
+     
+      <EditExpenseItemModal
+  visible={isEditModalOpen}
+  onClose={() => setIsEditModalOpen(false)}
+  onSubmit={handleUpdateExpenseItem}
+  initialValues={selectedItem}
+/>
+
+
+      <ViewExpenseItemDrawer
+        visible={isViewDrawerOpen}
+        onClose={() => setIsViewDrawerOpen(false)}
+        data={selectedItem}
+      />
     </div>
   );
 };
