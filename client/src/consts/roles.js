@@ -31,12 +31,13 @@ export const roles = [
       menuItems: [
         { name: "Bütün Sifarişlər", link: "/orders/all-order" },
         { name: "Yeni Sifariş Yarat", link: "/orders/make-order" },
-        { name: "Raportlar", link: "/raports" },
+        // { name: "Raportlar", link: "/raports" },
         { name: "Lotlar", link: "/lots" },
         { name: "Xərc Maddələri", link: "/expense-items" },
         { name: "Müqavilələr", link: "/contracts" },
         { name: "Şirkətlər", link: "/companies" },
         { name: "Kateqoriyalar", link: "/categories" },
+        { name: "İstifadəçilər", link: "/users" },
       ],
     },
     {

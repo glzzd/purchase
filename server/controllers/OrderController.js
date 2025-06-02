@@ -6,6 +6,8 @@ import RaportModel from "../models/RaportModel.js";
 import UserModel from "../models/UserModel.js";
 
 export const makeNewOrder = async (id, orders, raport) => {
+ 
+  
   try {
     if (!id) {
       console.error("Error: User ID is missing.");
@@ -48,7 +50,12 @@ export const makeNewOrder = async (id, orders, raport) => {
           raport_id: raport?._id || null, // raport varsa ekle, yoksa null yap
         });
 
-        await newOrder.save();
+        try {
+  await newOrder.save();
+} catch (orderError) {
+  console.error("Error creating order for product:", item.product, orderError);
+}
+
       } catch (orderError) {
         console.error("Error creating order for product:", item.product, orderError.message);
       }
@@ -63,6 +70,7 @@ export const makeNewOrder = async (id, orders, raport) => {
   export const allOrders = async (req, res) => {
     try {
       const orders = await OrderModel.find().sort({ createdAt: -1 });
+      console.log("All orders fetched:", orders);
   
       if (orders.length === 0) {
         return res.status(404).json({

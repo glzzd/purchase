@@ -10,7 +10,7 @@ const orderSchema = new mongoose.Schema({
     raport_id:{type: String, required:true},
     raport_no_from_bc:{type: String, default:null},
     description: {type: String, default:null},
-    operation_by: {type: String, default:null, required:true},
+    operation_by: {type: String, default:null},
     product_specifications: [{type: mongoose.Schema.Types.Mixed}],
     order_count: {type: Number, required:true},
     order_reason: {type: String},

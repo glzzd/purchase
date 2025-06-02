@@ -5,6 +5,8 @@ import transporter from "../config/nodemailer.js";
 
 export const addUser = async (req, res) => {
   const newUserData = req.body;
+  console.log(newUserData);
+
   if (!newUserData) {
     return res.json({ success: false, message: "Məlumatlar Doldurulmayıb." });
   }
@@ -34,7 +36,7 @@ export const addUser = async (req, res) => {
     await transporter.sendMail(mailOptions);
     await newUser.save();
 
-    return res.json({ success: true });
+    return res.json({ success: true , password: randomPassword});
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
@@ -89,3 +91,40 @@ export const getAllUsers = async (req, res) => {
 }
 
 
+export const updateUser = async (req, res) => {
+  const { _id, name, surname, email, systemRole } = req.body;
+
+  if (!_id) return res.status(400).json({ message: "ID tapılmadı" });
+
+  try {
+    await UserModel.findByIdAndUpdate(_id, {
+      name,
+      surname,
+      email,
+      systemRole
+    });
+
+    return res.status(200).json({ message: "İstifadəçi yeniləndi" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Xəta baş verdi" });
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  const { _id, password } = req.body;
+
+  if (!_id || !password)
+    return res.status(400).json({ message: "ID və ya şifrə daxil edilməyib" });
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await UserModel.findByIdAndUpdate(_id, { password: hashedPassword });
+
+    return res.status(200).json({ message: "Şifrə yeniləndi" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Xəta baş verdi" });
+  }
+};

@@ -15,6 +15,7 @@ import Contracts from './pages/ContractsPage'
 import Companies from './pages/CompaniesPage'
 import Categories from './pages/CategoriesPage'
 import ExpenseItems from './pages/ExpenseItems'
+import AllUsersPage from './pages/UsersPage/AllUsersPage'
 
 const App = () => {
   return (
@@ -38,6 +39,7 @@ const App = () => {
         <Route path='/contracts' element={<Contracts/>} />
         <Route path='/companies' element={<Companies/>} />
         <Route path='/categories' element={<Categories/>} />
+        <Route path='/users' element={<AllUsersPage/>} />
 
         </Route>
 
